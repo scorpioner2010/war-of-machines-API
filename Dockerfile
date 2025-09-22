@@ -2,15 +2,17 @@
 # Build stage
 # --------------------------
 FROM mcr.microsoft.com/dotnet/sdk:8.0 AS build
-WORKDIR /src
+WORKDIR /app
 
-# копіюємо csproj окремо для кешу
-COPY WarOfMachinesAPI/WarOfMachinesAPI.csproj WarOfMachinesAPI/
-RUN dotnet restore WarOfMachinesAPI/WarOfMachinesAPI.csproj
-
-# копіюємо решту
+# Копіюємо все (як у твоєму старому варіанті)
 COPY . .
-RUN dotnet publish WarOfMachinesAPI/WarOfMachinesAPI.csproj -c Release -o /app/out
+
+# Заходимо в каталог проєкту
+WORKDIR /app/WarOfMachinesAPI
+
+# Відновлення й публікація
+RUN dotnet restore WarOfMachinesAPI.csproj
+RUN dotnet publish WarOfMachinesAPI.csproj -c Release -o /app/out /p:UseAppHost=false
 
 # --------------------------
 # Runtime stage
@@ -18,14 +20,11 @@ RUN dotnet publish WarOfMachinesAPI/WarOfMachinesAPI.csproj -c Release -o /app/o
 FROM mcr.microsoft.com/dotnet/aspnet:8.0
 WORKDIR /app
 
-# Render задає PORT у середовищі → використовуємо його
-ENV DOTNET_RUNNING_IN_CONTAINER=true \
-    DOTNET_USE_POLLING_FILE_WATCHER=true \
-    DOTNET_SYSTEM_GLOBALIZATION_INVARIANT=false \
-    ASPNETCORE_URLS=http://0.0.0.0:${PORT}
-
 COPY --from=build /app/out ./
 
+# Render задає змінну PORT — слухаємо її
+ENV ASPNETCORE_URLS=http://0.0.0.0:${PORT}
 EXPOSE 10000
 
-ENTRYPOINT ["dotnet", "WarOfMachinesAPI.dll"]
+# УВАГА: назва DLL з логів publish — WarOfMachines.dll
+ENTRYPOINT ["dotnet", "WarOfMachines.dll"]
