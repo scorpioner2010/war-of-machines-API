@@ -1,7 +1,8 @@
+using System;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
-namespace WarOfMachinesAPI.Models
+namespace WarOfMachines.Models
 {
     public class Player
     {
@@ -18,5 +19,16 @@ namespace WarOfMachinesAPI.Models
         public bool IsAdmin { get; set; } = false;
 
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
+
+        // --- Прогрес ---
+        public int XpTotal { get; set; } = 0;
+        public int Mmr { get; set; } = 0;
+
+        // --- Валюти ---
+        // М’яка валюта: Болти
+        public int Bolts { get; set; } = 0;
+
+        // Преміум валюта: Адамант
+        public int Adamant { get; set; } = 0;
     }
 }

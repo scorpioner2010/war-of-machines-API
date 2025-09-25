@@ -3,6 +3,7 @@ using System;
 using System.Text.Json;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using WarOfMachines.Data;
@@ -12,9 +13,11 @@ using WarOfMachines.Data;
 namespace WarOfMachines.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20250925164006_AddUserVehicles")]
+    partial class AddUserVehicles
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -23,76 +26,6 @@ namespace WarOfMachines.Migrations
 
             NpgsqlModelBuilderExtensions.UseIdentityByDefaultColumns(modelBuilder);
 
-            modelBuilder.Entity("WarOfMachines.Models.Match", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTimeOffset?>("EndedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<string>("Map")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<DateTimeOffset>("StartedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.HasKey("Id");
-
-                    b.ToTable("Matches");
-                });
-
-            modelBuilder.Entity("WarOfMachines.Models.MatchParticipant", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("Damage")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Kills")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("MatchId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("MmrDelta")
-                        .HasColumnType("integer");
-
-                    b.Property<string>("Result")
-                        .IsRequired()
-                        .HasColumnType("text");
-
-                    b.Property<int>("Team")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("VehicleId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("XpEarned")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("MatchId");
-
-                    b.HasIndex("UserId");
-
-                    b.HasIndex("VehicleId");
-
-                    b.ToTable("MatchParticipants");
-                });
-
             modelBuilder.Entity("WarOfMachines.Models.Player", b =>
                 {
                     b.Property<int>("Id")
@@ -100,12 +33,6 @@ namespace WarOfMachines.Migrations
                         .HasColumnType("integer");
 
                     NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<int>("Adamant")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("Bolts")
-                        .HasColumnType("integer");
 
                     b.Property<DateTimeOffset>("CreatedAt")
                         .HasColumnType("timestamp with time zone");
@@ -189,33 +116,6 @@ namespace WarOfMachines.Migrations
                         .IsUnique();
 
                     b.ToTable("Vehicles");
-                });
-
-            modelBuilder.Entity("WarOfMachines.Models.MatchParticipant", b =>
-                {
-                    b.HasOne("WarOfMachines.Models.Match", "Match")
-                        .WithMany()
-                        .HasForeignKey("MatchId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("WarOfMachines.Models.Player", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("WarOfMachines.Models.Vehicle", "Vehicle")
-                        .WithMany()
-                        .HasForeignKey("VehicleId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("Match");
-
-                    b.Navigation("User");
-
-                    b.Navigation("Vehicle");
                 });
 
             modelBuilder.Entity("WarOfMachines.Models.UserVehicle", b =>

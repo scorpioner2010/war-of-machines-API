@@ -1,8 +1,8 @@
 using System.Text;
-using WarOfMachinesAPI.Data;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
+using WarOfMachines.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -10,20 +10,26 @@ var builder = WebApplication.CreateBuilder(args);
 string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
                            ?? builder.Configuration["DATABASE_URL"];
 if (string.IsNullOrWhiteSpace(connectionString))
+{
     throw new InvalidOperationException("Connection string not configured.");
+}
 
 // ensure sslmode=require (Render)
 static string EnsureSsl(string cs)
 {
     if (cs.IndexOf("sslmode", StringComparison.OrdinalIgnoreCase) >= 0 ||
-        cs.IndexOf("Ssl Mode", StringComparison.OrdinalIgnoreCase) >= 0) return cs;
+        cs.IndexOf("Ssl Mode", StringComparison.OrdinalIgnoreCase) >= 0)
+    {
+        return cs;
+    }
+
     return cs.Contains("://")
         ? (cs.Contains("?") ? cs + "&sslmode=require" : cs + "?sslmode=require")
         : cs + ";Ssl Mode=Require";
 }
 connectionString = EnsureSsl(connectionString);
 
-builder.Services.AddDbContext<AppDbContext>(opts => opts.UseNpgsql(connectionString));
+builder.Services.AddDbContext<AppDbContext>(opts => { opts.UseNpgsql(connectionString); });
 
 // --- Controllers ---
 builder.Services.AddControllers();
@@ -35,7 +41,9 @@ builder.Services.AddSwaggerGen();
 // --- JWT ---
 string? jwtKey = builder.Configuration["Jwt:Key"];
 if (string.IsNullOrWhiteSpace(jwtKey))
+{
     throw new InvalidOperationException("JWT Key not configured.");
+}
 
 builder.Services.AddAuthentication(options =>
 {
@@ -72,11 +80,14 @@ app.UseAuthorization();
 
 app.MapControllers();
 
-// --- Auto-migrate ---
+// --- Auto-migrate + Seed ---
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
     db.Database.Migrate();
+
+    // Ініціалізуємо стартові дані (vehicles, тестовий адмін)
+    SeedData.Initialize(db);
 }
 
 app.Run();
