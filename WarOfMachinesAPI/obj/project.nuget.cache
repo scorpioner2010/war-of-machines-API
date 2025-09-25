@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "qpIHEvcBklU=",
+  "dgSpecHash": "ZWxbnqJ4boI=",
   "success": true,
-  "projectFilePath": "A:\\Programing\\ServerProjects\\war-of-machines-API\\WarOfMachinesAPI\\WarOfMachinesAPI.csproj",
+  "projectFilePath": "D:\\Programing\\ServerProjects\\war-of-machines-API\\WarOfMachinesAPI\\WarOfMachinesAPI.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\Toras\\.nuget\\packages\\bcrypt.net-next\\4.0.3\\bcrypt.net-next.4.0.3.nupkg.sha512",
     "C:\\Users\\Toras\\.nuget\\packages\\humanizer.core\\2.14.1\\humanizer.core.2.14.1.nupkg.sha512",
@@ -67,9 +67,9 @@
       "code": "NU1603",
       "level": "Warning",
       "message": "WarOfMachines depends on Npgsql.EntityFrameworkCore.PostgreSQL (>= 8.0.7) but Npgsql.EntityFrameworkCore.PostgreSQL 8.0.7 was not found. Npgsql.EntityFrameworkCore.PostgreSQL 8.0.8 was resolved instead.",
-      "projectPath": "A:\\Programing\\ServerProjects\\war-of-machines-API\\WarOfMachinesAPI\\WarOfMachinesAPI.csproj",
+      "projectPath": "D:\\Programing\\ServerProjects\\war-of-machines-API\\WarOfMachinesAPI\\WarOfMachinesAPI.csproj",
       "warningLevel": 1,
-      "filePath": "A:\\Programing\\ServerProjects\\war-of-machines-API\\WarOfMachinesAPI\\WarOfMachinesAPI.csproj",
+      "filePath": "D:\\Programing\\ServerProjects\\war-of-machines-API\\WarOfMachinesAPI\\WarOfMachinesAPI.csproj",
       "libraryId": "Npgsql.EntityFrameworkCore.PostgreSQL",
       "targetGraphs": [
         "net8.0"

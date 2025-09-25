@@ -10,13 +10,25 @@ namespace WarOfMachines.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
-        // Унікальний код для клієнта/балансу (наприклад: "light_mk1")
+        // Унікальний код техніки (глобально унікальний)
         [Required]
         public string Code { get; set; } = string.Empty;
 
-        // Людинозрозуміла назва (наприклад: "Scout MK I")
+        // Людинозрозуміла назва
         [Required]
         public string Name { get; set; } = string.Empty;
+
+        // --- НОВЕ: Приналежність до фракції ---
+        [Required]
+        public int FactionId { get; set; }
+
+        [ForeignKey(nameof(FactionId))]
+        public Faction? Faction { get; set; }
+
+        // --- НОВЕ: Гілка розвитку (тип шасі) ---
+        // "tracked" | "biped" (на даному етапі 2 варіанти)
+        [Required]
+        public string Branch { get; set; } = "tracked";
 
         // Гнучкі стати однією JSONB-колонкою (hp, dmg, speed, armor, reload, тощо)
         [Column(TypeName = "jsonb")]

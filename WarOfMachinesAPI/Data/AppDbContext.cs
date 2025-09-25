@@ -12,28 +12,42 @@ namespace WarOfMachines.Data
         public DbSet<UserVehicle> UserVehicles => Set<UserVehicle>();
         public DbSet<Match> Matches => Set<Match>();
         public DbSet<MatchParticipant> MatchParticipants => Set<MatchParticipant>();
+        public DbSet<Faction> Factions => Set<Faction>();
+
+        // NEW:
+        public DbSet<Map> Maps => Set<Map>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // ---- Vehicle ----
-            modelBuilder.Entity<Vehicle>()
-                .HasIndex(v => v.Code)
+            // Faction
+            modelBuilder.Entity<Faction>()
+                .HasIndex(f => f.Code)
                 .IsUnique();
 
+            modelBuilder.Entity<Faction>()
+                .Property(f => f.Code).IsRequired();
+            modelBuilder.Entity<Faction>()
+                .Property(f => f.Name).IsRequired();
+
+            // Vehicle
             modelBuilder.Entity<Vehicle>()
-                .Property(v => v.Code)
-                .IsRequired();
+                .HasIndex(v => v.Code).IsUnique();
+            modelBuilder.Entity<Vehicle>()
+                .Property(v => v.Code).IsRequired();
+            modelBuilder.Entity<Vehicle>()
+                .Property(v => v.Name).IsRequired();
 
             modelBuilder.Entity<Vehicle>()
-                .Property(v => v.Name)
-                .IsRequired();
+                .HasOne(v => v.Faction)
+                .WithMany()
+                .HasForeignKey(v => v.FactionId)
+                .OnDelete(DeleteBehavior.Restrict);
 
-            // ---- UserVehicle ----
+            // UserVehicle
             modelBuilder.Entity<UserVehicle>()
-                .HasIndex(uv => new { uv.UserId, uv.VehicleId })
-                .IsUnique();
+                .HasIndex(uv => new { uv.UserId, uv.VehicleId }).IsUnique();
 
             modelBuilder.Entity<UserVehicle>()
                 .HasIndex(nameof(UserVehicle.UserId), nameof(UserVehicle.IsActive))
@@ -52,7 +66,7 @@ namespace WarOfMachines.Data
                 .HasForeignKey(uv => uv.VehicleId)
                 .OnDelete(DeleteBehavior.Restrict);
 
-            // ---- MatchParticipant ----
+            // MatchParticipant
             modelBuilder.Entity<MatchParticipant>()
                 .HasOne(mp => mp.Match)
                 .WithMany()
@@ -70,6 +84,16 @@ namespace WarOfMachines.Data
                 .WithMany()
                 .HasForeignKey(mp => mp.VehicleId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // Map
+            modelBuilder.Entity<Map>()
+                .HasIndex(m => m.Code)
+                .IsUnique();
+
+            modelBuilder.Entity<Map>()
+                .Property(m => m.Code).IsRequired();
+            modelBuilder.Entity<Map>()
+                .Property(m => m.Name).IsRequired();
         }
     }
 }

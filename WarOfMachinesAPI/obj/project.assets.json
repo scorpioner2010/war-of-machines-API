@@ -2947,11 +2947,11 @@
   "project": {
     "version": "1.0.0",
     "restore": {
-      "projectUniqueName": "A:\\Programing\\ServerProjects\\war-of-machines-API\\WarOfMachinesAPI\\WarOfMachinesAPI.csproj",
+      "projectUniqueName": "D:\\Programing\\ServerProjects\\war-of-machines-API\\WarOfMachinesAPI\\WarOfMachinesAPI.csproj",
       "projectName": "WarOfMachines",
-      "projectPath": "A:\\Programing\\ServerProjects\\war-of-machines-API\\WarOfMachinesAPI\\WarOfMachinesAPI.csproj",
+      "projectPath": "D:\\Programing\\ServerProjects\\war-of-machines-API\\WarOfMachinesAPI\\WarOfMachinesAPI.csproj",
       "packagesPath": "C:\\Users\\Toras\\.nuget\\packages\\",
-      "outputPath": "A:\\Programing\\ServerProjects\\war-of-machines-API\\WarOfMachinesAPI\\obj\\",
+      "outputPath": "D:\\Programing\\ServerProjects\\war-of-machines-API\\WarOfMachinesAPI\\obj\\",
       "projectStyle": "PackageReference",
       "fallbackFolders": [
         "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"

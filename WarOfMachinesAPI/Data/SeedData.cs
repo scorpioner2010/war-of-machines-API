@@ -1,4 +1,3 @@
-using System;
 using System.Linq;
 using System.Text.Json;
 using WarOfMachines.Models;
@@ -9,7 +8,41 @@ namespace WarOfMachines.Data
     {
         public static void Initialize(AppDbContext db)
         {
-            // --- Players (1 запис) ---
+            // --- Factions ---
+            var iron = db.Factions.FirstOrDefault(f => f.Code == "iron_alliance")
+                       ?? db.Factions.Add(new Faction { Code = "iron_alliance", Name = "Залізний Альянс", Description = "Фракція важких мехів і сталі" }).Entity;
+
+            var nova = db.Factions.FirstOrDefault(f => f.Code == "nova_syndicate")
+                       ?? db.Factions.Add(new Faction { Code = "nova_syndicate", Name = "Нова Синдикат", Description = "Фракція високих технологій і мобільності" }).Entity;
+
+            db.SaveChanges();
+
+            // --- Maps ---
+            if (!db.Maps.Any())
+            {
+                db.Maps.AddRange(
+                    new Map { Code = "demo_map", Name = "Demo Yard", Description = "Невелика тестова арена" },
+                    new Map { Code = "steel_arena", Name = "Steel Arena", Description = "Кільцева арена з укриттями" }
+                );
+                db.SaveChanges();
+            }
+
+            // --- Vehicles (2 фракції * 3 роботи) ---
+            if (!db.Vehicles.Any())
+            {
+                db.Vehicles.AddRange(
+                    new Vehicle { Code = "starter",  Name = "IA Scout Mk.I", FactionId = iron.Id, Branch = "tracked", Stats = JsonDocument.Parse("""{ "hp": 120, "dmg": 12, "speed": 6 }""") },
+                    new Vehicle { Code = "ia_heavy", Name = "IA Heavy Mk.II", FactionId = iron.Id, Branch = "tracked", Stats = JsonDocument.Parse("""{ "hp": 320, "dmg": 30, "speed": 2 }""") },
+                    new Vehicle { Code = "ia_biped", Name = "IA Strider",    FactionId = iron.Id, Branch = "biped",   Stats = JsonDocument.Parse("""{ "hp": 180, "dmg": 18, "speed": 5 }""") },
+
+                    new Vehicle { Code = "nv_light",   Name = "Nova Swift",   FactionId = nova.Id, Branch = "biped",   Stats = JsonDocument.Parse("""{ "hp": 100, "dmg": 14, "speed": 7 }""") },
+                    new Vehicle { Code = "nv_tank",    Name = "Nova Bulwark", FactionId = nova.Id, Branch = "tracked", Stats = JsonDocument.Parse("""{ "hp": 280, "dmg": 26, "speed": 3 }""") },
+                    new Vehicle { Code = "nv_assault", Name = "Nova Raptor",  FactionId = nova.Id, Branch = "biped",   Stats = JsonDocument.Parse("""{ "hp": 160, "dmg": 22, "speed": 6 }""") }
+                );
+                db.SaveChanges();
+            }
+
+            // --- Players (1 запис) + стартовий юніт ---
             if (!db.Players.Any())
             {
                 var user = new Player
@@ -18,56 +51,19 @@ namespace WarOfMachines.Data
                     PasswordHash = BCrypt.Net.BCrypt.HashPassword("test123"),
                     IsAdmin = false,
                     XpTotal = 50,
-                    Mmr = 1000
+                    Mmr = 1000,
+                    Bolts = 10000,
+                    Adamant = 0
                 };
                 db.Players.Add(user);
                 db.SaveChanges();
-            }
-            var firstUser = db.Players.First();
 
-            // --- Vehicles (3 типи: starter, heavy, scout) ---
-            if (!db.Vehicles.Any())
-            {
-                db.Vehicles.AddRange(
-                    new Vehicle
-                    {
-                        Code = "starter",
-                        Name = "Starter Bot",
-                        Stats = JsonDocument.Parse("""{ "hp": 100, "dmg": 10, "speed": 5 }""")
-                    },
-                    new Vehicle
-                    {
-                        Code = "heavy",
-                        Name = "Heavy Tank Bot",
-                        Stats = JsonDocument.Parse("""{ "hp": 300, "dmg": 30, "speed": 2 }""")
-                    },
-                    new Vehicle
-                    {
-                        Code = "scout",
-                        Name = "Scout Drone",
-                        Stats = JsonDocument.Parse("""{ "hp": 70, "dmg": 7, "speed": 8 }""")
-                    }
-                );
+                var starter = db.Vehicles.First(v => v.Code == "starter");
+                db.UserVehicles.Add(new UserVehicle { UserId = user.Id, VehicleId = starter.Id, IsActive = true });
                 db.SaveChanges();
             }
 
-            var starter = db.Vehicles.First(v => v.Code == "starter");
-            var heavy   = db.Vehicles.First(v => v.Code == "heavy");
-            var scout   = db.Vehicles.First(v => v.Code == "scout");
-
-            // --- UserVehicles (видати користувачу тільки starter як активний) ---
-            if (!db.UserVehicles.Any())
-            {
-                db.UserVehicles.Add(new UserVehicle
-                {
-                    UserId = firstUser.Id,
-                    VehicleId = starter.Id,
-                    IsActive = true
-                });
-                db.SaveChanges();
-            }
-
-            // --- Matches (1 запис) ---
+            // --- Demo Match ---
             if (!db.Matches.Any())
             {
                 var m = new Match
@@ -78,23 +74,13 @@ namespace WarOfMachines.Data
                 };
                 db.Matches.Add(m);
                 db.SaveChanges();
-            }
-            var firstMatch = db.Matches.First();
 
-            // --- MatchParticipants (1 запис для testuser зі starter) ---
-            if (!db.MatchParticipants.Any())
-            {
+                var u = db.Players.First();
+                var starter = db.Vehicles.First(v => v.Code == "starter");
                 db.MatchParticipants.Add(new MatchParticipant
                 {
-                    MatchId = firstMatch.Id,
-                    UserId = firstUser.Id,
-                    VehicleId = starter.Id,
-                    Team = 1,
-                    Result = "win",
-                    Kills = 2,
-                    Damage = 120,
-                    XpEarned = 50,
-                    MmrDelta = 10
+                    MatchId = m.Id, UserId = u.Id, VehicleId = starter.Id,
+                    Team = 1, Result = "win", Kills = 2, Damage = 120, XpEarned = 50, MmrDelta = 10
                 });
                 db.SaveChanges();
             }
