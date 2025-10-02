@@ -18,20 +18,44 @@ namespace WarOfMachines.Models
         [Required]
         public string Name { get; set; } = string.Empty;
 
-        // --- НОВЕ: Приналежність до фракції ---
+        // Приналежність до фракції
         [Required]
         public int FactionId { get; set; }
 
         [ForeignKey(nameof(FactionId))]
         public Faction? Faction { get; set; }
 
-        // --- НОВЕ: Гілка розвитку (тип шасі) ---
-        // "tracked" | "biped" (на даному етапі 2 варіанти)
+        // Тип шасі: "tracked" | "biped"
         [Required]
         public string Branch { get; set; } = "tracked";
 
-        // Гнучкі стати однією JSONB-колонкою (hp, dmg, speed, armor, reload, тощо)
-        [Column(TypeName = "jsonb")]
-        public JsonDocument Stats { get; set; } = JsonDocument.Parse("""{}""");
+        // -------------------------------------------------
+        // НОВІ СТАТИ (нормалізовані, без JSON)
+        // -------------------------------------------------
+
+        // Основні ТТХ
+        public int HP { get; set; } = 0;
+        public int Damage { get; set; } = 0;
+        public int Penetration { get; set; } = 0;
+
+        // Часи/точність (секунди/коеф.)
+        public float ReloadTime { get; set; } = 0f;       // сек
+        public float Accuracy { get; set; } = 0f;         // 0..1 або кут розсіювання — підберемо пізніше
+        public float AimTime { get; set; } = 0f;          // сек
+
+        // Мобільність
+        public float Speed { get; set; } = 0f;            // макс. швидкість (м/с або ум.од.)
+        public float Acceleration { get; set; } = 0f;     // прискорення (м/с^2 або ум.од.)
+        public float TraverseSpeed { get; set; } = 0f;    // швидкість повороту корпусу (град/с)
+        public float TurretTraverseSpeed { get; set; } = 0f; // швидкість повороту башти (град/с)
+
+        // Броня (Front/Side/Rear)
+        public int TurretArmorFront { get; set; } = 0;
+        public int TurretArmorSide  { get; set; } = 0;
+        public int TurretArmorRear  { get; set; } = 0;
+
+        public int HullArmorFront { get; set; } = 0;
+        public int HullArmorSide  { get; set; } = 0;
+        public int HullArmorRear  { get; set; } = 0;
     }
 }

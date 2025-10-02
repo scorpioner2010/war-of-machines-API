@@ -1,5 +1,4 @@
 using System.Linq;
-using System.Text.Json;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WarOfMachines.Data;
@@ -47,7 +46,20 @@ namespace WarOfMachines.Controllers
                     Branch = v.Branch,
                     FactionCode = v.Faction != null ? v.Faction.Code : string.Empty,
                     FactionName = v.Faction != null ? v.Faction.Name : string.Empty,
-                    Stats = v.Stats.RootElement.Clone()
+
+                    HP = v.HP,
+                    Damage = v.Damage,
+                    Penetration = v.Penetration,
+                    ReloadTime = v.ReloadTime,
+                    Accuracy = v.Accuracy,
+                    AimTime = v.AimTime,
+                    Speed = v.Speed,
+                    Acceleration = v.Acceleration,
+                    TraverseSpeed = v.TraverseSpeed,
+                    TurretTraverseSpeed = v.TurretTraverseSpeed,
+
+                    TurretArmor = $"{v.TurretArmorFront}/{v.TurretArmorSide}/{v.TurretArmorRear}",
+                    HullArmor   = $"{v.HullArmorFront}/{v.HullArmorSide}/{v.HullArmorRear}"
                 })
                 .ToList();
 
@@ -71,7 +83,20 @@ namespace WarOfMachines.Controllers
                 Branch = v.Branch,
                 FactionCode = v.Faction != null ? v.Faction.Code : string.Empty,
                 FactionName = v.Faction != null ? v.Faction.Name : string.Empty,
-                Stats = v.Stats.RootElement.Clone()
+
+                HP = v.HP,
+                Damage = v.Damage,
+                Penetration = v.Penetration,
+                ReloadTime = v.ReloadTime,
+                Accuracy = v.Accuracy,
+                AimTime = v.AimTime,
+                Speed = v.Speed,
+                Acceleration = v.Acceleration,
+                TraverseSpeed = v.TraverseSpeed,
+                TurretTraverseSpeed = v.TurretTraverseSpeed,
+
+                TurretArmor = $"{v.TurretArmorFront}/{v.TurretArmorSide}/{v.TurretArmorRear}",
+                HullArmor   = $"{v.HullArmorFront}/{v.HullArmorSide}/{v.HullArmorRear}"
             });
         }
 
@@ -92,11 +117,25 @@ namespace WarOfMachines.Controllers
                 Branch = v.Branch,
                 FactionCode = v.Faction != null ? v.Faction.Code : string.Empty,
                 FactionName = v.Faction != null ? v.Faction.Name : string.Empty,
-                Stats = v.Stats.RootElement.Clone()
+
+                HP = v.HP,
+                Damage = v.Damage,
+                Penetration = v.Penetration,
+                ReloadTime = v.ReloadTime,
+                Accuracy = v.Accuracy,
+                AimTime = v.AimTime,
+                Speed = v.Speed,
+                Acceleration = v.Acceleration,
+                TraverseSpeed = v.TraverseSpeed,
+                TurretTraverseSpeed = v.TurretTraverseSpeed,
+
+                TurretArmor = $"{v.TurretArmorFront}/{v.TurretArmorSide}/{v.TurretArmorRear}",
+                HullArmor   = $"{v.HullArmorFront}/{v.HullArmorSide}/{v.HullArmorRear}"
             });
         }
     }
 
+    // DTO для API
     public class VehicleDto
     {
         public int Id { get; set; }
@@ -107,6 +146,20 @@ namespace WarOfMachines.Controllers
         public string FactionCode { get; set; } = string.Empty;
         public string FactionName { get; set; } = string.Empty;
 
-        public JsonElement Stats { get; set; }
+        public int HP { get; set; }
+        public int Damage { get; set; }
+        public int Penetration { get; set; }
+
+        public float ReloadTime { get; set; }
+        public float Accuracy { get; set; }
+        public float AimTime { get; set; }
+
+        public float Speed { get; set; }
+        public float Acceleration { get; set; }
+        public float TraverseSpeed { get; set; }
+        public float TurretTraverseSpeed { get; set; }
+
+        public string TurretArmor { get; set; } = "0/0/0";
+        public string HullArmor   { get; set; } = "0/0/0";
     }
 }
