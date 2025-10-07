@@ -62,7 +62,7 @@ namespace WarOfMachines.Controllers
                     TurretTraverseSpeed = v.TurretTraverseSpeed,
 
                     TurretArmor = $"{v.TurretArmorFront}/{v.TurretArmorSide}/{v.TurretArmorRear}",
-                    HullArmor = $"{v.HullArmorFront}/{v.HullArmorSide}/{v.HullArmorRear}"
+                    HullArmor   = $"{v.HullArmorFront}/{v.HullArmorSide}/{v.HullArmorRear}"
                 })
                 .ToList();
 
@@ -103,7 +103,7 @@ namespace WarOfMachines.Controllers
                 TurretTraverseSpeed = v.TurretTraverseSpeed,
 
                 TurretArmor = $"{v.TurretArmorFront}/{v.TurretArmorSide}/{v.TurretArmorRear}",
-                HullArmor = $"{v.HullArmorFront}/{v.HullArmorSide}/{v.HullArmorRear}"
+                HullArmor   = $"{v.HullArmorFront}/{v.HullArmorSide}/{v.HullArmorRear}"
             });
         }
 
@@ -141,11 +141,11 @@ namespace WarOfMachines.Controllers
                 TurretTraverseSpeed = v.TurretTraverseSpeed,
 
                 TurretArmor = $"{v.TurretArmorFront}/{v.TurretArmorSide}/{v.TurretArmorRear}",
-                HullArmor = $"{v.HullArmorFront}/{v.HullArmorSide}/{v.HullArmorRear}"
+                HullArmor   = $"{v.HullArmorFront}/{v.HullArmorSide}/{v.HullArmorRear}"
             });
         }
 
-        // --- TECH TREE ---
+        // --- TECH TREE LINKS ---
 
         // GET /vehicles/{id}/research-from  -> хто може відкрити цей танк (і скільки XP треба на предку)
         [HttpGet("{id:int}/research-from")]
@@ -170,7 +170,7 @@ namespace WarOfMachines.Controllers
             public int RequiredXpOnPredecessor { get; set; }
         }
 
-        // POST /vehicles/links
+        // POST /vehicles/links  -> додати зв’язок предок->нащадок
         [HttpPost("links")]
         public IActionResult CreateLink([FromBody] CreateLinkDto dto)
         {
@@ -213,19 +213,64 @@ namespace WarOfMachines.Controllers
 
             return NoContent();
         }
+
+        // --- GRAPH (для візуалізації дерева) ---
+
+        // GET /vehicles/graph?faction=iron_alliance
+        [HttpGet("graph")]
+        public IActionResult GetGraph([FromQuery] string? faction = null)
+        {
+            var vq = _db.Vehicles
+                .Include(v => v.Faction)
+                .AsQueryable();
+
+            if (!string.IsNullOrWhiteSpace(faction))
+            {
+                string fc = faction.Trim();
+                vq = vq.Where(v => v.Faction != null && v.Faction.Code == fc);
+            }
+
+            var nodes = vq
+                .Select(v => new
+                {
+                    id = v.Id,
+                    code = v.Code,
+                    name = v.Name,
+                    @class = v.Class.ToString(),
+                    level = v.Level,
+                    branch = v.Branch,
+                    factionCode = v.Faction != null ? v.Faction.Code : string.Empty
+                })
+                .ToList();
+
+            var nodeIds = nodes.Select(n => n.id).ToList();
+
+            var edges = _db.VehicleResearchRequirements
+                .Where(r => nodeIds.Contains(r.PredecessorVehicleId) || nodeIds.Contains(r.SuccessorVehicleId))
+                .Select(r => new
+                {
+                    fromId = r.PredecessorVehicleId,
+                    toId = r.SuccessorVehicleId,
+                    requiredXp = r.RequiredXpOnPredecessor
+                })
+                .ToList();
+
+            return Ok(new { nodes, edges });
+        }
     }
 
+    // DTO для списків/деталей
     public class VehicleDto
     {
         public int Id { get; set; }
         public string Code { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
 
-        public string Branch { get; set; } = string.Empty;
+        public string Branch { get; set; } = string.Empty; // "tracked" | "biped"
         public string FactionCode { get; set; } = string.Empty;
         public string FactionName { get; set; } = string.Empty;
 
-        public string Class { get; set; } = string.Empty;
+        public string Class { get; set; } = string.Empty;  // Scout|Guardian|Colossus
         public int Level { get; set; }
         public int PurchaseCost { get; set; }
 
@@ -243,6 +288,6 @@ namespace WarOfMachines.Controllers
         public float TurretTraverseSpeed { get; set; }
 
         public string TurretArmor { get; set; } = "0/0/0";
-        public string HullArmor { get; set; } = "0/0/0";
+        public string HullArmor   { get; set; } = "0/0/0";
     }
 }
