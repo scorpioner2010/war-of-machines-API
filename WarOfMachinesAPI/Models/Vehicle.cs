@@ -1,6 +1,6 @@
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using System.Text.Json;
 
 namespace WarOfMachines.Models
 {
@@ -10,52 +10,52 @@ namespace WarOfMachines.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
-        // Унікальний код техніки (глобально унікальний)
         [Required]
         public string Code { get; set; } = string.Empty;
 
-        // Людинозрозуміла назва
         [Required]
         public string Name { get; set; } = string.Empty;
 
-        // Приналежність до фракції
         [Required]
         public int FactionId { get; set; }
 
         [ForeignKey(nameof(FactionId))]
         public Faction? Faction { get; set; }
 
-        // Тип шасі: "tracked" | "biped"
         [Required]
-        public string Branch { get; set; } = "tracked";
+        public string Branch { get; set; } = "tracked"; // "tracked" | "biped"
 
-        // -------------------------------------------------
-        // НОВІ СТАТИ (нормалізовані, без JSON)
-        // -------------------------------------------------
+        [Required]
+        public VehicleClass Class { get; set; } = VehicleClass.Scout; // Scout|Guardian|Colossus
 
-        // Основні ТТХ
+        [Range(1, 4)]
+        public int Level { get; set; } = 1; // 1..4
+
+        public int PurchaseCost { get; set; } = 0;
+
         public int HP { get; set; } = 0;
         public int Damage { get; set; } = 0;
         public int Penetration { get; set; } = 0;
 
-        // Часи/точність (секунди/коеф.)
-        public float ReloadTime { get; set; } = 0f;       // сек
-        public float Accuracy { get; set; } = 0f;         // 0..1 або кут розсіювання — підберемо пізніше
-        public float AimTime { get; set; } = 0f;          // сек
+        public float ReloadTime { get; set; } = 0f;
+        public float Accuracy { get; set; } = 0f;
+        public float AimTime { get; set; } = 0f;
 
-        // Мобільність
-        public float Speed { get; set; } = 0f;            // макс. швидкість (м/с або ум.од.)
-        public float Acceleration { get; set; } = 0f;     // прискорення (м/с^2 або ум.од.)
-        public float TraverseSpeed { get; set; } = 0f;    // швидкість повороту корпусу (град/с)
-        public float TurretTraverseSpeed { get; set; } = 0f; // швидкість повороту башти (град/с)
+        public float Speed { get; set; } = 0f;
+        public float Acceleration { get; set; } = 0f;
+        public float TraverseSpeed { get; set; } = 0f;
+        public float TurretTraverseSpeed { get; set; } = 0f;
 
-        // Броня (Front/Side/Rear)
         public int TurretArmorFront { get; set; } = 0;
-        public int TurretArmorSide  { get; set; } = 0;
-        public int TurretArmorRear  { get; set; } = 0;
+        public int TurretArmorSide { get; set; } = 0;
+        public int TurretArmorRear { get; set; } = 0;
 
         public int HullArmorFront { get; set; } = 0;
-        public int HullArmorSide  { get; set; } = 0;
-        public int HullArmorRear  { get; set; } = 0;
+        public int HullArmorSide { get; set; } = 0;
+        public int HullArmorRear { get; set; } = 0;
+
+        public ICollection<VehicleResearchRequirement> ResearchFrom { get; set; } = new List<VehicleResearchRequirement>();
+        
+        public bool IsVisible { get; set; } = true;
     }
 }

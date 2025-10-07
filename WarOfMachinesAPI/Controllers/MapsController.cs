@@ -16,6 +16,7 @@ namespace WarOfMachines.Controllers
         }
 
         // GET /maps
+        [HttpGet]
         public IActionResult GetAll()
         {
             var items = _db.Maps

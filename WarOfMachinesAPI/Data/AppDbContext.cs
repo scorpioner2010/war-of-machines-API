@@ -13,9 +13,9 @@ namespace WarOfMachines.Data
         public DbSet<Match> Matches => Set<Match>();
         public DbSet<MatchParticipant> MatchParticipants => Set<MatchParticipant>();
         public DbSet<Faction> Factions => Set<Faction>();
-
-        // NEW:
         public DbSet<Map> Maps => Set<Map>();
+
+        public DbSet<VehicleResearchRequirement> VehicleResearchRequirements => Set<VehicleResearchRequirement>();
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -44,6 +44,23 @@ namespace WarOfMachines.Data
                 .WithMany()
                 .HasForeignKey(v => v.FactionId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            // VehicleResearchRequirement (предок -> нащадок; ResearchFrom прив'язане до Successor)
+            modelBuilder.Entity<Vehicle>()
+                .HasMany(v => v.ResearchFrom)
+                .WithOne(r => r.Successor)
+                .HasForeignKey(r => r.SuccessorVehicleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<VehicleResearchRequirement>()
+                .HasOne(r => r.Predecessor)
+                .WithMany()
+                .HasForeignKey(r => r.PredecessorVehicleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<VehicleResearchRequirement>()
+                .HasIndex(r => new { r.PredecessorVehicleId, r.SuccessorVehicleId })
+                .IsUnique();
 
             // UserVehicle
             modelBuilder.Entity<UserVehicle>()
