@@ -15,8 +15,7 @@ namespace WarOfMachines.Models
         public int Bolts { get; set; } = 0;
         public int Adamant { get; set; } = 0;
         public int FreeXp { get; set; } = 0;
-
-        // 🔹 ДОДАЙ ЦЕ:
+        
         public ICollection<UserVehicle> UserVehicles { get; set; } = new List<UserVehicle>();
     }
 }
