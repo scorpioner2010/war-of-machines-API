@@ -25,21 +25,19 @@ namespace WarOfMachines.Controllers
             return int.Parse(idStr);
         }
 
+        // GET /players/me
         [HttpGet("me")]
-        public IActionResult GetMe()
+        public IActionResult GetMyProfile()
         {
-            int userId = CurrentUserId();
+            int uid = CurrentUserId();
 
-            var user = _db.Players.FirstOrDefault(u => u.Id == userId);
+            var user = _db.Players
+                .Include(p => p.UserVehicles)
+                    .ThenInclude(uv => uv.Vehicle)
+                .FirstOrDefault(p => p.Id == uid);
+
             if (user == null)
                 return NotFound();
-
-            var owned = _db.UserVehicles
-                .Where(x => x.UserId == userId)
-                .Include(x => x.Vehicle)
-                .ToList();
-
-            var active = owned.FirstOrDefault(x => x.IsActive);
 
             var dto = new PlayerProfileDto
             {
@@ -47,58 +45,43 @@ namespace WarOfMachines.Controllers
                 Username = user.Username,
                 IsAdmin = user.IsAdmin,
                 Mmr = user.Mmr,
-                FreeXp = user.FreeXp,
                 Bolts = user.Bolts,
                 Adamant = user.Adamant,
-                ActiveVehicleId = active?.VehicleId,
-                ActiveVehicleCode = active?.Vehicle?.Code,
-                ActiveVehicleName = active?.Vehicle?.Name,
-                OwnedVehicles = owned.Select(x => new OwnedVehicleDto
+                FreeXp = user.FreeXp,
+                ActiveVehicleId = user.UserVehicles.FirstOrDefault(v => v.IsActive)?.VehicleId ?? 0,
+                ActiveVehicleCode = user.UserVehicles.FirstOrDefault(v => v.IsActive)?.Vehicle?.Code ?? "",
+                ActiveVehicleName = user.UserVehicles.FirstOrDefault(v => v.IsActive)?.Vehicle?.Name ?? "",
+                OwnedVehicles = user.UserVehicles.Select(v => new OwnedVehicleDto
                 {
-                    VehicleId = x.VehicleId,
-                    Code = x.Vehicle?.Code ?? "",
-                    Name = x.Vehicle?.Name ?? "",
-                    IsActive = x.IsActive,
-                    Xp = x.Xp
-                }).ToArray()
+                    VehicleId = v.VehicleId,
+                    Code = v.Vehicle != null ? v.Vehicle.Code : "",
+                    Name = v.Vehicle != null ? v.Vehicle.Name : "",
+                    IsActive = v.IsActive
+                }).ToList()
             };
 
             return Ok(dto);
         }
-
-        [HttpPut("me/active/{vehicleId:int}")]
-        public IActionResult SetActiveVehicle(int vehicleId)
-        {
-            int userId = CurrentUserId();
-
-            var owned = _db.UserVehicles.Where(x => x.UserId == userId).ToList();
-            var target = owned.FirstOrDefault(x => x.VehicleId == vehicleId);
-            if (target == null)
-                return NotFound("User does not own this vehicle.");
-
-            foreach (var uv in owned)
-                uv.IsActive = uv.VehicleId == vehicleId;
-
-            _db.SaveChanges();
-            return Ok(new { ok = true, activeVehicleId = vehicleId });
-        }
     }
+
+    // --- DTO ---
 
     public class PlayerProfileDto
     {
         public int Id { get; set; }
         public string Username { get; set; } = string.Empty;
         public bool IsAdmin { get; set; }
+
         public int Mmr { get; set; }
-        public int FreeXp { get; set; }
         public int Bolts { get; set; }
         public int Adamant { get; set; }
+        public int FreeXp { get; set; }
 
-        public int? ActiveVehicleId { get; set; }
-        public string? ActiveVehicleCode { get; set; }
-        public string? ActiveVehicleName { get; set; }
+        public int ActiveVehicleId { get; set; }
+        public string ActiveVehicleCode { get; set; } = string.Empty;
+        public string ActiveVehicleName { get; set; } = string.Empty;
 
-        public OwnedVehicleDto[] OwnedVehicles { get; set; } = System.Array.Empty<OwnedVehicleDto>();
+        public List<OwnedVehicleDto> OwnedVehicles { get; set; } = new();
     }
 
     public class OwnedVehicleDto
@@ -107,6 +90,5 @@ namespace WarOfMachines.Controllers
         public string Code { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
         public bool IsActive { get; set; }
-        public int Xp { get; set; }
     }
 }
