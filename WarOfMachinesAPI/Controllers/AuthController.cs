@@ -3,8 +3,11 @@ using System.IdentityModel.Tokens.Jwt;
 using System.Linq;
 using System.Security.Claims;
 using System.Text;
+using BCrypt.Net;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using Microsoft.IdentityModel.Tokens;
 using WarOfMachines.Data;
 using WarOfMachines.Models;
@@ -16,206 +19,135 @@ namespace WarOfMachines.Controllers
     public class AuthController : ControllerBase
     {
         private readonly AppDbContext _db;
-        private readonly IConfiguration _config;
         private readonly ILogger<AuthController> _logger;
+        private readonly byte[] _jwtKey;
 
-        public AuthController(AppDbContext db, IConfiguration config, ILogger<AuthController> logger)
+        public AuthController(AppDbContext db, ILogger<AuthController> logger, IConfiguration cfg)
         {
             _db = db;
-            _config = config;
             _logger = logger;
+            _jwtKey = Encoding.UTF8.GetBytes(cfg["Jwt:Key"] ?? "super_secret_key_change_me_please_32+");
         }
-
-        // =======================
-        // ======= DTOs ==========
-        // =======================
 
         public class RegisterRequest
         {
-            public string Username { get; set; } = string.Empty;
-            public string Password { get; set; } = string.Empty;
+            public string Username { get; set; } = "";
+            public string Password { get; set; } = "";
         }
 
         public class LoginRequest
         {
-            public string Username { get; set; } = string.Empty;
-            public string Password { get; set; } = string.Empty;
+            public string Username { get; set; } = "";
+            public string Password { get; set; } = "";
         }
 
-        public class AuthResponse
+        public class TokenResponse
         {
-            public string Token { get; set; } = string.Empty;
-            public PlayerProfileDto Player { get; set; } = new PlayerProfileDto();
+            public string Token { get; set; } = "";
         }
-
-        public class PlayerProfileDto
-        {
-            public int Id { get; set; }
-            public string Username { get; set; } = string.Empty;
-            public bool IsAdmin { get; set; }
-            public int Mmr { get; set; }
-            public int FreeXp { get; set; }
-            public int Bolts { get; set; }
-            public int Adamant { get; set; }
-
-            public int? ActiveVehicleId { get; set; }
-            public string? ActiveVehicleCode { get; set; }
-            public string? ActiveVehicleName { get; set; }
-
-            public OwnedVehicleDto[] OwnedVehicles { get; set; } = Array.Empty<OwnedVehicleDto>();
-        }
-
-        public class OwnedVehicleDto
-        {
-            public int VehicleId { get; set; }
-            public string Code { get; set; } = string.Empty;
-            public string Name { get; set; } = string.Empty;
-            public bool IsActive { get; set; }
-            public int Xp { get; set; }
-        }
-
-        // =======================
-        // ===== Endpoints =======
-        // =======================
 
         [HttpPost("register")]
+        [AllowAnonymous]
         public IActionResult Register([FromBody] RegisterRequest request)
         {
-            _logger.LogInformation("Register: {@Req}", request);
+            _logger.LogInformation("Register: {Request}", request);
 
             if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
-                return BadRequest("Username and password are required.");
+                return BadRequest("Username/password required.");
 
-            if (_db.Players.Any(u => u.Username == request.Username))
-                return BadRequest("User already exists.");
+            bool exists = _db.Players.Any(p => p.Username == request.Username);
+            if (exists) return Conflict("Username already taken.");
 
-            var user = new Player
+            var player = new Player
             {
-                Username = request.Username.Trim(),
+                Username = request.Username,
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 IsAdmin = false,
+                CreatedAt = DateTimeOffset.UtcNow,
                 Mmr = 0,
                 FreeXp = 0,
                 Bolts = 10000,
                 Adamant = 0
             };
 
-            _db.Players.Add(user);
+            _db.Players.Add(player);
             _db.SaveChanges();
 
-            // Starter vehicle
-            string starterCode = _config["StarterVehicleCode"] ?? "starter";
-            var starter = _db.Vehicles.FirstOrDefault(v => v.Code == starterCode);
-            if (starter != null)
-            {
-                bool already = _db.UserVehicles.Any(x => x.UserId == user.Id && x.VehicleId == starter.Id);
-                if (!already)
-                {
-                    _db.UserVehicles.Add(new UserVehicle
-                    {
-                        UserId = user.Id,
-                        VehicleId = starter.Id,
-                        IsActive = true,
-                        Xp = 0
-                    });
-                    _db.SaveChanges();
-                }
-            }
+            EnsureStarterVehicle(player.Id);
 
-            var token = CreateJwt(user);
-            var profile = BuildProfile(user.Id);
-
-            _logger.LogInformation("User {Username} registered.", user.Username);
-            return Ok(new AuthResponse { Token = token, Player = profile });
+            var token = IssueJwt(player);
+            return Ok(new TokenResponse { Token = token });
         }
 
         [HttpPost("login")]
+        [AllowAnonymous]
         public IActionResult Login([FromBody] LoginRequest request)
         {
             _logger.LogInformation("Login attempt: {Username}", request.Username);
 
-            var user = _db.Players.FirstOrDefault(u => u.Username == request.Username);
-            if (user == null)
-            {
-                _logger.LogWarning("Login failed: user not found.");
-                return Unauthorized("Invalid username or password.");
-            }
+            var user = _db.Players.FirstOrDefault(p => p.Username == request.Username);
+            if (user == null) return Unauthorized("Invalid username or password.");
 
-            if (!BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash))
-            {
-                _logger.LogWarning("Login failed: wrong password.");
-                return Unauthorized("Invalid username or password.");
-            }
+            bool ok = BCrypt.Net.BCrypt.Verify(request.Password, user.PasswordHash);
+            if (!ok) return Unauthorized("Invalid username or password.");
 
-            var token = CreateJwt(user);
-            var profile = BuildProfile(user.Id);
+            // auto-heal для старих юзерів без стартової техніки
+            EnsureStarterVehicle(user.Id);
 
-            _logger.LogInformation("User {Username} logged in.", user.Username);
-            return Ok(new AuthResponse { Token = token, Player = profile });
+            var token = IssueJwt(user);
+            return Ok(new TokenResponse { Token = token });
         }
 
-        // =======================
-        // ===== Helpers =========
-        // =======================
+        // ===== helpers =====
 
-        private string CreateJwt(Player user)
+        private void EnsureStarterVehicle(int userId)
         {
-            var keyStr = _config["Jwt:Key"];
-            if (string.IsNullOrWhiteSpace(keyStr))
-                throw new InvalidOperationException("JWT Key not configured.");
+            bool hasAny = _db.UserVehicles.Any(x => x.UserId == userId);
+            if (hasAny) return;
 
-            var key = Encoding.UTF8.GetBytes(keyStr);
-            var tokenHandler = new JwtSecurityTokenHandler();
-            var descriptor = new SecurityTokenDescriptor
+            // 1) спробувати конкретний відомий код
+            Vehicle? starter = _db.Vehicles.FirstOrDefault(v => v.Code == "ia_l1_starter");
+
+            // 2) якщо ні — взяти будь-який видимий 1 рівня, або просто найдешевший
+            starter ??= _db.Vehicles
+                .OrderBy(v => v.Level)        // Level 1 насамперед
+                .ThenByDescending(v => v.IsVisible)
+                .ThenBy(v => v.PurchaseCost)
+                .FirstOrDefault();
+
+            if (starter == null) return; // у БД нема техніки — нічого не робимо
+
+            var uv = new UserVehicle
             {
-                Subject = new ClaimsIdentity(new[]
-                {
-                    new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
-                    new Claim(ClaimTypes.Name, user.Username),
-                    new Claim("isAdmin", user.IsAdmin.ToString())
-                }),
-                Expires = DateTime.UtcNow.AddHours(2),
-                SigningCredentials = new SigningCredentials(new SymmetricSecurityKey(key), SecurityAlgorithms.HmacSha256Signature)
+                UserId = userId,
+                VehicleId = starter.Id,
+                IsActive = true,
+                Xp = 0
             };
-
-            var token = tokenHandler.CreateToken(descriptor);
-            return tokenHandler.WriteToken(token);
+            _db.UserVehicles.Add(uv);
+            _db.SaveChanges();
         }
 
-        private PlayerProfileDto BuildProfile(int userId)
+        private string IssueJwt(Player user)
         {
-            var u = _db.Players.First(x => x.Id == userId);
+            var handler = new JwtSecurityTokenHandler();
 
-            var owned = _db.UserVehicles
-                .Where(x => x.UserId == userId)
-                .Include(x => x.Vehicle)
-                .ToList();
-
-            var active = owned.FirstOrDefault(x => x.IsActive);
-
-            return new PlayerProfileDto
+            var identity = new ClaimsIdentity(new[]
             {
-                Id = u.Id,
-                Username = u.Username,
-                IsAdmin = u.IsAdmin,
-                Mmr = u.Mmr,
-                FreeXp = u.FreeXp,
-                Bolts = u.Bolts,
-                Adamant = u.Adamant,
-                ActiveVehicleId = active?.VehicleId,
-                ActiveVehicleCode = active?.Vehicle?.Code,
-                ActiveVehicleName = active?.Vehicle?.Name,
-                OwnedVehicles = owned
-                    .Select(x => new OwnedVehicleDto
-                    {
-                        VehicleId = x.VehicleId,
-                        Code = x.Vehicle?.Code ?? "",
-                        Name = x.Vehicle?.Name ?? "",
-                        IsActive = x.IsActive,
-                        Xp = x.Xp
-                    })
-                    .ToArray()
-            };
+                new Claim(ClaimTypes.NameIdentifier, user.Id.ToString()),
+                new Claim(ClaimTypes.Name, user.Username),
+                new Claim(ClaimTypes.Role, user.IsAdmin ? "admin" : "user"),
+            });
+
+            var creds = new SigningCredentials(new SymmetricSecurityKey(_jwtKey), SecurityAlgorithms.HmacSha256);
+
+            var token = handler.CreateJwtSecurityToken(
+                subject: identity,
+                notBefore: DateTime.UtcNow,
+                expires: DateTime.UtcNow.AddDays(7),
+                signingCredentials: creds);
+
+            return handler.WriteToken(token);
         }
     }
 }
