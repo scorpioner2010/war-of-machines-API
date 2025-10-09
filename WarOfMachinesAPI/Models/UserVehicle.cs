@@ -9,18 +9,17 @@ namespace WarOfMachines.Models
         [DatabaseGenerated(DatabaseGeneratedOption.Identity)]
         public int Id { get; set; }
 
-        // Власник
         [Required]
         public int UserId { get; set; }
 
-        // Посилання на каталог техніки
         [Required]
         public int VehicleId { get; set; }
 
-        // Поточний активний вибір (у користувача має бути не більше 1 активного)
         public bool IsActive { get; set; } = false;
 
-        // Навігаційні властивості
+        // 🔹 Нове поле — досвід саме цього робота
+        public int Xp { get; set; } = 0;
+
         [ForeignKey(nameof(UserId))]
         public Player? User { get; set; }
 

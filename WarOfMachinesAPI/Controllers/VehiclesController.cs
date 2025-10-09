@@ -1,7 +1,7 @@
-using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WarOfMachines.Data;
+using WarOfMachines.Models;
 
 namespace WarOfMachines.Controllers
 {
@@ -20,9 +20,7 @@ namespace WarOfMachines.Controllers
         [HttpGet]
         public IActionResult GetAll([FromQuery] string? faction = null, [FromQuery] string? branch = null)
         {
-            var q = _db.Vehicles
-                .Include(v => v.Faction)
-                .AsQueryable();
+            IQueryable<Vehicle> q = _db.Vehicles.Include(v => v.Faction).AsQueryable();
 
             if (!string.IsNullOrWhiteSpace(faction))
             {
@@ -36,7 +34,7 @@ namespace WarOfMachines.Controllers
                 q = q.Where(v => v.Branch.ToLower() == br);
             }
 
-            var items = q
+            List<VehicleDto> items = q
                 .Select(v => new VehicleDto
                 {
                     Id = v.Id,

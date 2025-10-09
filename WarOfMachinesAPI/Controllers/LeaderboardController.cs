@@ -1,6 +1,6 @@
 using System.Linq;
-using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using WarOfMachines.Data;
 
 namespace WarOfMachines.Controllers
@@ -17,24 +17,6 @@ namespace WarOfMachines.Controllers
             _db = db;
         }
 
-        // GET /leaderboard/xp?top=10
-        [HttpGet("xp")]
-        public IActionResult GetByXp([FromQuery] int top = 10)
-        {
-            var list = _db.Players
-                .OrderByDescending(p => p.XpTotal)
-                .Take(top)
-                .Select(p => new LeaderboardEntry
-                {
-                    UserId = p.Id,
-                    Username = p.Username,
-                    Value = p.XpTotal
-                })
-                .ToList();
-
-            return Ok(list);
-        }
-
         // GET /leaderboard/mmr?top=10
         [HttpGet("mmr")]
         public IActionResult GetByMmr([FromQuery] int top = 10)
@@ -47,6 +29,44 @@ namespace WarOfMachines.Controllers
                     UserId = p.Id,
                     Username = p.Username,
                     Value = p.Mmr
+                })
+                .ToList();
+
+            return Ok(list);
+        }
+
+        // GET /leaderboard/free-xp?top=10
+        [HttpGet("free-xp")]
+        public IActionResult GetByFreeXp([FromQuery] int top = 10)
+        {
+            var list = _db.Players
+                .OrderByDescending(p => p.FreeXp)
+                .Take(top)
+                .Select(p => new LeaderboardEntry
+                {
+                    UserId = p.Id,
+                    Username = p.Username,
+                    Value = p.FreeXp
+                })
+                .ToList();
+
+            return Ok(list);
+        }
+
+        // GET /leaderboard/vehicle-xp?top=10
+        // Рейтинг за досвідом конкретних роботів
+        [HttpGet("vehicle-xp")]
+        public IActionResult GetByVehicleXp([FromQuery] int top = 10)
+        {
+            var list = _db.UserVehicles
+                .OrderByDescending(v => v.Xp)
+                .Take(top)
+                .Select(v => new
+                {
+                    UserId = v.UserId,
+                    Username = v.User != null ? v.User.Username : "",
+                    VehicleName = v.Vehicle != null ? v.Vehicle.Name : "",
+                    Xp = v.Xp
                 })
                 .ToList();
 

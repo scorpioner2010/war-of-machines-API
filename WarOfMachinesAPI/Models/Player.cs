@@ -21,14 +21,13 @@ namespace WarOfMachines.Models
         public DateTimeOffset CreatedAt { get; set; } = DateTimeOffset.UtcNow;
 
         // --- Прогрес ---
-        public int XpTotal { get; set; } = 0;
         public int Mmr { get; set; } = 0;
 
-        // --- Валюти ---
-        // М’яка валюта: Болти
-        public int Bolts { get; set; } = 0;
+        // 🔹 Free XP — універсальний досвід
+        public int FreeXp { get; set; } = 0;
 
-        // Преміум валюта: Адамант
+        // --- Валюти ---
+        public int Bolts { get; set; } = 0;
         public int Adamant { get; set; } = 0;
     }
 }

@@ -53,8 +53,8 @@ namespace WarOfMachines.Controllers
             public int Id { get; set; }
             public string Username { get; set; } = string.Empty;
             public bool IsAdmin { get; set; }
-            public int XpTotal { get; set; }
             public int Mmr { get; set; }
+            public int FreeXp { get; set; }
             public int Bolts { get; set; }
             public int Adamant { get; set; }
 
@@ -71,6 +71,7 @@ namespace WarOfMachines.Controllers
             public string Code { get; set; } = string.Empty;
             public string Name { get; set; } = string.Empty;
             public bool IsActive { get; set; }
+            public int Xp { get; set; }
         }
 
         // =======================
@@ -83,30 +84,26 @@ namespace WarOfMachines.Controllers
             _logger.LogInformation("Register: {@Req}", request);
 
             if (string.IsNullOrWhiteSpace(request.Username) || string.IsNullOrWhiteSpace(request.Password))
-            {
                 return BadRequest("Username and password are required.");
-            }
 
             if (_db.Players.Any(u => u.Username == request.Username))
-            {
                 return BadRequest("User already exists.");
-            }
 
             var user = new Player
             {
                 Username = request.Username.Trim(),
                 PasswordHash = BCrypt.Net.BCrypt.HashPassword(request.Password),
                 IsAdmin = false,
-                XpTotal = 0,
                 Mmr = 0,
-                Bolts = 10000,  // стартові болти
-                Adamant = 0     // стартовий адамант
+                FreeXp = 0,
+                Bolts = 10000,
+                Adamant = 0
             };
 
             _db.Players.Add(user);
             _db.SaveChanges();
 
-            // Стартова техніка (starter) якщо є в каталозі
+            // Starter vehicle
             string starterCode = _config["StarterVehicleCode"] ?? "starter";
             var starter = _db.Vehicles.FirstOrDefault(v => v.Code == starterCode);
             if (starter != null)
@@ -118,7 +115,8 @@ namespace WarOfMachines.Controllers
                     {
                         UserId = user.Id,
                         VehicleId = starter.Id,
-                        IsActive = true
+                        IsActive = true,
+                        Xp = 0
                     });
                     _db.SaveChanges();
                 }
@@ -164,9 +162,7 @@ namespace WarOfMachines.Controllers
         {
             var keyStr = _config["Jwt:Key"];
             if (string.IsNullOrWhiteSpace(keyStr))
-            {
                 throw new InvalidOperationException("JWT Key not configured.");
-            }
 
             var key = Encoding.UTF8.GetBytes(keyStr);
             var tokenHandler = new JwtSecurityTokenHandler();
@@ -202,8 +198,8 @@ namespace WarOfMachines.Controllers
                 Id = u.Id,
                 Username = u.Username,
                 IsAdmin = u.IsAdmin,
-                XpTotal = u.XpTotal,
                 Mmr = u.Mmr,
+                FreeXp = u.FreeXp,
                 Bolts = u.Bolts,
                 Adamant = u.Adamant,
                 ActiveVehicleId = active?.VehicleId,
@@ -213,9 +209,10 @@ namespace WarOfMachines.Controllers
                     .Select(x => new OwnedVehicleDto
                     {
                         VehicleId = x.VehicleId,
-                        Code = x.Vehicle != null ? x.Vehicle.Code : string.Empty,
-                        Name = x.Vehicle != null ? x.Vehicle.Name : string.Empty,
-                        IsActive = x.IsActive
+                        Code = x.Vehicle?.Code ?? "",
+                        Name = x.Vehicle?.Name ?? "",
+                        IsActive = x.IsActive,
+                        Xp = x.Xp
                     })
                     .ToArray()
             };

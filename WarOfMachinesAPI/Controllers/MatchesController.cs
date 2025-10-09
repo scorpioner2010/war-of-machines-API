@@ -17,11 +17,11 @@ namespace WarOfMachines.Controllers
     {
         private readonly AppDbContext _db;
 
-        // --- Параметри нарахувань (налаштовувані) ---
+        // --- Параметри нарахувань ---
         private const int XpWinBase = 300;
         private const int XpDrawBase = 200;
         private const int XpLoseBase = 150;
-        private const double XpPerDamage = 0.5;   // 1 XP за кожні 2 dmg
+        private const double XpPerDamage = 0.5;
         private const int XpPerKill = 50;
         private const int XpCapPerBattle = 2000;
 
@@ -41,6 +41,9 @@ namespace WarOfMachines.Controllers
         private const int MaxDamagePerBattle = 20000;
         private const int MinKills = 0;
         private const int MinDamage = 0;
+
+        // --- Відсоток Free XP ---
+        private const double FreeXpPercent = 0.05;
 
         public MatchesController(AppDbContext db)
         {
@@ -77,60 +80,40 @@ namespace WarOfMachines.Controllers
 
         // ---------------------------------------------
         // POST /matches/{matchId}/end
-        // Ідемпотентність:
-        //  - Якщо матч уже завершено або є учасники в БД -> 409/400
-        //  - Дублікати userId у тілі запиту -> 400
-        //  - Записуємо все в транзакції, щоб уникнути часткових оновлень
         // ---------------------------------------------
         [HttpPost("{matchId:int}/end")]
         public IActionResult EndMatch(int matchId, [FromBody] EndMatchRequest req)
         {
             if (req == null || req.Participants == null || req.Participants.Count == 0)
-            {
                 return BadRequest("Participants required.");
-            }
 
             var match = _db.Matches.FirstOrDefault(m => m.Id == matchId);
             if (match == null)
-            {
                 return NotFound("Match not found.");
-            }
 
             if (match.EndedAt != null)
-            {
                 return BadRequest("Match already ended.");
-            }
 
-            // Якщо вже є підсумки в БД для цього матчу — блокуємо повтор
             bool alreadyHasParticipants = _db.MatchParticipants.Any(x => x.MatchId == matchId);
             if (alreadyHasParticipants)
-            {
                 return Conflict("Results for this match were already submitted.");
-            }
 
-            // Перевірка на дублікати userId у запиті
             var duplicateUsers = req.Participants
                 .GroupBy(p => p.UserId)
                 .Where(g => g.Count() > 1)
                 .Select(g => g.Key)
                 .ToList();
-            if (duplicateUsers.Count > 0)
-            {
-                return BadRequest($"Duplicate participants in request for UserIds: {string.Join(",", duplicateUsers)}");
-            }
 
-            // Завантажуємо гравців
+            if (duplicateUsers.Count > 0)
+                return BadRequest($"Duplicate participants: {string.Join(",", duplicateUsers)}");
+
             var userIds = req.Participants.Select(p => p.UserId).Distinct().ToList();
             var users = _db.Players.Where(u => userIds.Contains(u.Id)).ToDictionary(u => u.Id, u => u);
 
-            // Перевіряємо, що всі userId існують
             var missingUsers = userIds.Where(id => !users.ContainsKey(id)).ToList();
             if (missingUsers.Count > 0)
-            {
                 return BadRequest($"Unknown users: {string.Join(",", missingUsers)}");
-            }
 
-            // Середні MMR по командах для ELO
             var teamToUserIds = req.Participants
                 .GroupBy(p => p.Team)
                 .ToDictionary(g => g.Key, g => g.Select(x => x.UserId).ToList());
@@ -150,10 +133,9 @@ namespace WarOfMachines.Controllers
             {
                 var user = users[raw.UserId];
 
-                // ---- АНТИ-ЧИТ КЛЕМПИ ----
                 int kills = Math.Clamp(raw.Kills, MinKills, MaxKillsPerBattle);
                 int damage = Math.Clamp(raw.Damage, MinDamage, MaxDamagePerBattle);
-                string result = NormalizeResult(raw.Result); // "win"/"draw"/"lose"
+                string result = NormalizeResult(raw.Result);
 
                 // --- XP ---
                 int xpBase = result switch
@@ -186,16 +168,13 @@ namespace WarOfMachines.Controllers
                 int mmrDelta = (int)Math.Round(MmrK * (score - expected), MidpointRounding.AwayFromZero);
                 mmrDelta = Math.Clamp(mmrDelta, MmrCapLoss, MmrCapGain);
 
-                // Захист від дубляжу на рівні БД (на випадок гонок)
                 bool existsForUser = _db.MatchParticipants.Any(x => x.MatchId == match.Id && x.UserId == raw.UserId);
                 if (existsForUser)
                 {
-                    // Якщо раптом паралельний запит встиг записати — зриваємо цей end як конфлікт
                     tx.Rollback();
                     return Conflict($"Results already submitted for user {raw.UserId} in this match.");
                 }
 
-                // Зберігаємо підсумок
                 var mp = new MatchParticipant
                 {
                     MatchId = match.Id,
@@ -210,10 +189,17 @@ namespace WarOfMachines.Controllers
                 };
                 _db.MatchParticipants.Add(mp);
 
-                // Оновлюємо гравця
-                user.XpTotal += xpTotal;
+                // --- Оновлення прогресу ---
                 user.Mmr += mmrDelta;
                 user.Bolts += bolts;
+                user.FreeXp += (int)Math.Round(xpTotal * FreeXpPercent, MidpointRounding.AwayFromZero);
+
+                // Знаходимо техніку гравця
+                var uv = _db.UserVehicles.FirstOrDefault(v => v.UserId == raw.UserId && v.VehicleId == raw.VehicleId);
+                if (uv != null)
+                {
+                    uv.Xp += xpTotal;
+                }
             }
 
             _db.SaveChanges();
@@ -224,8 +210,8 @@ namespace WarOfMachines.Controllers
 
         private static string NormalizeResult(string input)
         {
-            if (string.Equals(input, "win", StringComparison.OrdinalIgnoreCase)) { return "win"; }
-            if (string.Equals(input, "draw", StringComparison.OrdinalIgnoreCase)) { return "draw"; }
+            if (string.Equals(input, "win", StringComparison.OrdinalIgnoreCase)) return "win";
+            if (string.Equals(input, "draw", StringComparison.OrdinalIgnoreCase)) return "draw";
             return "lose";
         }
 
@@ -233,10 +219,7 @@ namespace WarOfMachines.Controllers
         {
             foreach (var t in teams)
             {
-                if (t != myTeam)
-                {
-                    return t;
-                }
+                if (t != myTeam) return t;
             }
             return myTeam;
         }
@@ -251,7 +234,6 @@ namespace WarOfMachines.Controllers
             public int UserId { get; set; }
             public int VehicleId { get; set; }
             public int Team { get; set; }
-            // "win" | "lose" | "draw"
             public string Result { get; set; } = "lose";
             public int Kills { get; set; } = 0;
             public int Damage { get; set; } = 0;
