@@ -47,6 +47,7 @@ namespace WarOfMachines.Controllers
                     Class = v.Class.ToString(),
                     Level = v.Level,
                     PurchaseCost = v.PurchaseCost,
+                    IsVisible = v.IsVisible, // 🔹 додано
 
                     HP = v.HP,
                     Damage = v.Damage,
@@ -60,7 +61,7 @@ namespace WarOfMachines.Controllers
                     TurretTraverseSpeed = v.TurretTraverseSpeed,
 
                     TurretArmor = $"{v.TurretArmorFront}/{v.TurretArmorSide}/{v.TurretArmorRear}",
-                    HullArmor   = $"{v.HullArmorFront}/{v.HullArmorSide}/{v.HullArmorRear}"
+                    HullArmor = $"{v.HullArmorFront}/{v.HullArmorSide}/{v.HullArmorRear}"
                 })
                 .ToList();
 
@@ -88,6 +89,7 @@ namespace WarOfMachines.Controllers
                 Class = v.Class.ToString(),
                 Level = v.Level,
                 PurchaseCost = v.PurchaseCost,
+                IsVisible = v.IsVisible, // 🔹 додано
 
                 HP = v.HP,
                 Damage = v.Damage,
@@ -101,7 +103,7 @@ namespace WarOfMachines.Controllers
                 TurretTraverseSpeed = v.TurretTraverseSpeed,
 
                 TurretArmor = $"{v.TurretArmorFront}/{v.TurretArmorSide}/{v.TurretArmorRear}",
-                HullArmor   = $"{v.HullArmorFront}/{v.HullArmorSide}/{v.HullArmorRear}"
+                HullArmor = $"{v.HullArmorFront}/{v.HullArmorSide}/{v.HullArmorRear}"
             });
         }
 
@@ -126,6 +128,7 @@ namespace WarOfMachines.Controllers
                 Class = v.Class.ToString(),
                 Level = v.Level,
                 PurchaseCost = v.PurchaseCost,
+                IsVisible = v.IsVisible, // 🔹 додано
 
                 HP = v.HP,
                 Damage = v.Damage,
@@ -139,13 +142,13 @@ namespace WarOfMachines.Controllers
                 TurretTraverseSpeed = v.TurretTraverseSpeed,
 
                 TurretArmor = $"{v.TurretArmorFront}/{v.TurretArmorSide}/{v.TurretArmorRear}",
-                HullArmor   = $"{v.HullArmorFront}/{v.HullArmorSide}/{v.HullArmorRear}"
+                HullArmor = $"{v.HullArmorFront}/{v.HullArmorSide}/{v.HullArmorRear}"
             });
         }
 
         // --- TECH TREE LINKS ---
 
-        // GET /vehicles/{id}/research-from  -> хто може відкрити цей танк (і скільки XP треба на предку)
+        // GET /vehicles/{id}/research-from
         [HttpGet("{id:int}/research-from")]
         public IActionResult GetResearchFrom(int id)
         {
@@ -168,7 +171,7 @@ namespace WarOfMachines.Controllers
             public int RequiredXpOnPredecessor { get; set; }
         }
 
-        // POST /vehicles/links  -> додати зв’язок предок->нащадок
+        // POST /vehicles/links
         [HttpPost("links")]
         public IActionResult CreateLink([FromBody] CreateLinkDto dto)
         {
@@ -212,7 +215,7 @@ namespace WarOfMachines.Controllers
             return NoContent();
         }
 
-        // --- GRAPH (для візуалізації дерева) ---
+        // --- GRAPH (для дерева розвитку) ---
 
         // GET /vehicles/graph?faction=iron_alliance
         [HttpGet("graph")]
@@ -237,7 +240,8 @@ namespace WarOfMachines.Controllers
                     @class = v.Class.ToString(),
                     level = v.Level,
                     branch = v.Branch,
-                    factionCode = v.Faction != null ? v.Faction.Code : string.Empty
+                    factionCode = v.Faction != null ? v.Faction.Code : string.Empty,
+                    isVisible = v.IsVisible // 🔹 додано
                 })
                 .ToList();
 
@@ -257,20 +261,21 @@ namespace WarOfMachines.Controllers
         }
     }
 
-    // DTO для списків/деталей
+    // DTO
     public class VehicleDto
     {
         public int Id { get; set; }
         public string Code { get; set; } = string.Empty;
         public string Name { get; set; } = string.Empty;
 
-        public string Branch { get; set; } = string.Empty; // "tracked" | "biped"
+        public string Branch { get; set; } = string.Empty;
         public string FactionCode { get; set; } = string.Empty;
         public string FactionName { get; set; } = string.Empty;
 
-        public string Class { get; set; } = string.Empty;  // Scout|Guardian|Colossus
+        public string Class { get; set; } = string.Empty;
         public int Level { get; set; }
         public int PurchaseCost { get; set; }
+        public bool IsVisible { get; set; } // 🔹 нове поле
 
         public int HP { get; set; }
         public int Damage { get; set; }
@@ -286,6 +291,6 @@ namespace WarOfMachines.Controllers
         public float TurretTraverseSpeed { get; set; }
 
         public string TurretArmor { get; set; } = "0/0/0";
-        public string HullArmor   { get; set; } = "0/0/0";
+        public string HullArmor { get; set; } = "0/0/0";
     }
 }
