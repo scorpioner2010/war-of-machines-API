@@ -37,47 +37,184 @@ namespace WarOfMachines.Data
                 db.SaveChanges();
             }
 
-            // --- Vehicles ---
-            if (!db.Vehicles.Any())
+            // ------- Локальні хелпери (ідемпотентні) -------
+            Vehicle EnsureVehicle(Vehicle v)
             {
-                // Simplified seeding: one basic starter for each faction
-                var iaStarter = new Vehicle
+                var existing = db.Vehicles.FirstOrDefault(x => x.Code == v.Code);
+                if (existing != null) return existing;
+                db.Vehicles.Add(v);
+                db.SaveChanges();
+                return v;
+            }
+
+            void EnsureLink(int predecessorId, int successorId, int requiredXp)
+            {
+                bool exists = db.VehicleResearchRequirements
+                    .Any(r => r.PredecessorVehicleId == predecessorId && r.SuccessorVehicleId == successorId);
+                if (exists) return;
+
+                db.VehicleResearchRequirements.Add(new VehicleResearchRequirement
                 {
-                    Code = "ia_l1_starter",
-                    Name = "IA Skirmisher L1",
-                    FactionId = iron.Id,
-                    Branch = "tracked",
-                    Class = VehicleClass.Scout,
-                    Level = 1,
-                    PurchaseCost = 0,
-
-                    HP = 120, Damage = 12, Penetration = 40,
-                    ReloadTime = 2.5f, Accuracy = 0.85f, AimTime = 1.8f,
-                    Speed = 6.0f, Acceleration = 3.5f, TraverseSpeed = 35f, TurretTraverseSpeed = 30f,
-                    TurretArmorFront = 40, TurretArmorSide = 25, TurretArmorRear = 20,
-                    HullArmorFront = 50, HullArmorSide = 30, HullArmorRear = 25
-                };
-
-                var nvStarter = new Vehicle
-                {
-                    Code = "nv_l1_starter",
-                    Name = "Nova Wisp L1",
-                    FactionId = nova.Id,
-                    Branch = "biped",
-                    Class = VehicleClass.Scout,
-                    Level = 1,
-                    PurchaseCost = 0,
-
-                    HP = 100, Damage = 14, Penetration = 60,
-                    ReloadTime = 2.2f, Accuracy = 0.86f, AimTime = 1.6f,
-                    Speed = 7.0f, Acceleration = 4.0f, TraverseSpeed = 38f, TurretTraverseSpeed = 34f,
-                    TurretArmorFront = 35, TurretArmorSide = 22, TurretArmorRear = 18,
-                    HullArmorFront = 40, HullArmorSide = 26, HullArmorRear = 20
-                };
-
-                db.Vehicles.AddRange(iaStarter, nvStarter);
+                    PredecessorVehicleId = predecessorId,
+                    SuccessorVehicleId = successorId,
+                    RequiredXpOnPredecessor = requiredXp
+                });
                 db.SaveChanges();
             }
+
+            // --- Vehicles (ідемпотентно; без if (!db.Vehicles.Any())) ---
+
+            // Iron Alliance (tracked) — L1 + три L2
+            var iaStarter = db.Vehicles.FirstOrDefault(v => v.Code == "ia_l1_starter")
+                            ?? EnsureVehicle(new Vehicle
+                            {
+                                Code = "ia_l1_starter",
+                                Name = "IA Skirmisher",
+                                FactionId = iron.Id,
+                                Branch = "tracked",
+                                Class = VehicleClass.Scout,
+                                Level = 1,
+                                PurchaseCost = 0,
+
+                                HP = 120, Damage = 12, Penetration = 40,
+                                ReloadTime = 2.5f, Accuracy = 0.85f, AimTime = 1.8f,
+                                Speed = 6.0f, Acceleration = 3.5f, TraverseSpeed = 35f, TurretTraverseSpeed = 30f,
+                                TurretArmorFront = 40, TurretArmorSide = 25, TurretArmorRear = 20,
+                                HullArmorFront = 50, HullArmorSide = 30, HullArmorRear = 25,
+                                IsVisible = true
+                            });
+
+            var iaL2Scout = EnsureVehicle(new Vehicle
+            {
+                Code = "ia_l2_scout",
+                Name = "IA Strider",
+                FactionId = iron.Id,
+                Branch = "tracked",
+                Class = VehicleClass.Scout,
+                Level = 2,
+                PurchaseCost = 5000,
+                HP = 150, Damage = 16, Penetration = 60,
+                ReloadTime = 2.3f, Accuracy = 0.87f, AimTime = 1.6f,
+                Speed = 7.0f, Acceleration = 3.8f, TraverseSpeed = 38f, TurretTraverseSpeed = 32f,
+                TurretArmorFront = 45, TurretArmorSide = 28, TurretArmorRear = 22,
+                HullArmorFront = 55, HullArmorSide = 32, HullArmorRear = 26,
+                IsVisible = true
+            });
+
+            var iaL2Guardian = EnsureVehicle(new Vehicle
+            {
+                Code = "ia_l2_guardian",
+                Name = "IA Bulwark",
+                FactionId = iron.Id,
+                Branch = "tracked",
+                Class = VehicleClass.Guardian,
+                Level = 2,
+                PurchaseCost = 9000,
+                HP = 220, Damage = 22, Penetration = 75,
+                ReloadTime = 2.8f, Accuracy = 0.84f, AimTime = 1.9f,
+                Speed = 5.8f, Acceleration = 3.0f, TraverseSpeed = 32f, TurretTraverseSpeed = 28f,
+                TurretArmorFront = 70, TurretArmorSide = 45, TurretArmorRear = 30,
+                HullArmorFront = 85, HullArmorSide = 55, HullArmorRear = 35,
+                IsVisible = true
+            });
+
+            var iaL2Colossus = EnsureVehicle(new Vehicle
+            {
+                Code = "ia_l2_colossus",
+                Name = "IA Juggernaut",
+                FactionId = iron.Id,
+                Branch = "tracked",
+                Class = VehicleClass.Colossus,
+                Level = 2,
+                PurchaseCost = 15000,
+                HP = 320, Damage = 34, Penetration = 90,
+                ReloadTime = 3.3f, Accuracy = 0.80f, AimTime = 2.2f,
+                Speed = 4.8f, Acceleration = 2.4f, TraverseSpeed = 26f, TurretTraverseSpeed = 22f,
+                TurretArmorFront = 110, TurretArmorSide = 70, TurretArmorRear = 50,
+                HullArmorFront = 120, HullArmorSide = 80, HullArmorRear = 55,
+                IsVisible = true
+            });
+
+            // Links: L1 -> (Scout|Guardian|Colossus)
+            EnsureLink(iaStarter.Id, iaL2Scout.Id,    requiredXp: 400);
+            EnsureLink(iaStarter.Id, iaL2Guardian.Id, requiredXp: 700);
+            EnsureLink(iaStarter.Id, iaL2Colossus.Id, requiredXp: 1000);
+
+            // Nova Syndicate (biped) — L1 + три L2
+            var nvStarter = db.Vehicles.FirstOrDefault(v => v.Code == "nv_l1_starter")
+                            ?? EnsureVehicle(new Vehicle
+                            {
+                                Code = "nv_l1_starter",
+                                Name = "Nova Wisp",
+                                FactionId = nova.Id,
+                                Branch = "biped",
+                                Class = VehicleClass.Scout,
+                                Level = 1,
+                                PurchaseCost = 0,
+
+                                HP = 100, Damage = 14, Penetration = 60,
+                                ReloadTime = 2.2f, Accuracy = 0.86f, AimTime = 1.6f,
+                                Speed = 7.0f, Acceleration = 4.0f, TraverseSpeed = 38f, TurretTraverseSpeed = 34f,
+                                TurretArmorFront = 35, TurretArmorSide = 22, TurretArmorRear = 18,
+                                HullArmorFront = 40, HullArmorSide = 26, HullArmorRear = 20,
+                                IsVisible = true
+                            });
+
+            var nvL2Scout = EnsureVehicle(new Vehicle
+            {
+                Code = "nv_l2_scout",
+                Name = "Nova Flicker",
+                FactionId = nova.Id,
+                Branch = "biped",
+                Class = VehicleClass.Scout,
+                Level = 2,
+                PurchaseCost = 5000,
+                HP = 130, Damage = 18, Penetration = 70,
+                ReloadTime = 2.1f, Accuracy = 0.88f, AimTime = 1.5f,
+                Speed = 7.6f, Acceleration = 4.4f, TraverseSpeed = 40f, TurretTraverseSpeed = 36f,
+                TurretArmorFront = 40, TurretArmorSide = 24, TurretArmorRear = 20,
+                HullArmorFront = 44, HullArmorSide = 28, HullArmorRear = 22,
+                IsVisible = true
+            });
+
+            var nvL2Guardian = EnsureVehicle(new Vehicle
+            {
+                Code = "nv_l2_guardian",
+                Name = "Nova Aegis",
+                FactionId = nova.Id,
+                Branch = "biped",
+                Class = VehicleClass.Guardian,
+                Level = 2,
+                PurchaseCost = 9000,
+                HP = 200, Damage = 24, Penetration = 85,
+                ReloadTime = 2.6f, Accuracy = 0.85f, AimTime = 1.8f,
+                Speed = 6.2f, Acceleration = 3.6f, TraverseSpeed = 34f, TurretTraverseSpeed = 30f,
+                TurretArmorFront = 60, TurretArmorSide = 40, TurretArmorRear = 28,
+                HullArmorFront = 70, HullArmorSide = 48, HullArmorRear = 32,
+                IsVisible = true
+            });
+
+            var nvL2Colossus = EnsureVehicle(new Vehicle
+            {
+                Code = "nv_l2_colossus",
+                Name = "Nova Titan",
+                FactionId = nova.Id,
+                Branch = "biped",
+                Class = VehicleClass.Colossus,
+                Level = 2,
+                PurchaseCost = 15000,
+                HP = 300, Damage = 36, Penetration = 100,
+                ReloadTime = 3.0f, Accuracy = 0.82f, AimTime = 2.0f,
+                Speed = 5.0f, Acceleration = 2.8f, TraverseSpeed = 28f, TurretTraverseSpeed = 24f,
+                TurretArmorFront = 95, TurretArmorSide = 65, TurretArmorRear = 45,
+                HullArmorFront = 105, HullArmorSide = 72, HullArmorRear = 50,
+                IsVisible = true
+            });
+
+            // Links: L1 -> (Scout|Guardian|Colossus)
+            EnsureLink(nvStarter.Id, nvL2Scout.Id,    requiredXp: 400);
+            EnsureLink(nvStarter.Id, nvL2Guardian.Id, requiredXp: 700);
+            EnsureLink(nvStarter.Id, nvL2Colossus.Id, requiredXp: 1000);
 
             // --- Players ---
             if (!db.Players.Any())
