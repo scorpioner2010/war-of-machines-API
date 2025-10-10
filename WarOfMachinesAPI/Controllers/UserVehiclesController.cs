@@ -1,3 +1,5 @@
+using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
@@ -62,36 +64,172 @@ namespace WarOfMachines.Controllers
 
         // ========================================
         // PUT /user-vehicles/me/active/{vehicleId}
+        // Уникаємо 23505 на IX_UserVehicles_UserId_IsActive:
+        // знімаємо старий TRUE -> SaveChanges -> виставляємо новий TRUE -> SaveChanges
         // ========================================
         [HttpPut("me/active/{vehicleId:int}")]
         public IActionResult SetActive(int vehicleId)
         {
             int uid = CurrentUserId();
 
-            List<UserVehicle> owned = _db.UserVehicles
+            using var tx = _db.Database.BeginTransaction();
+
+            var owned = _db.UserVehicles
                 .Where(x => x.UserId == uid)
                 .ToList();
 
-            UserVehicle? target = owned.FirstOrDefault(x => x.VehicleId == vehicleId);
+            var target = owned.FirstOrDefault(x => x.VehicleId == vehicleId);
             if (target == null)
                 return NotFound("User does not own this vehicle.");
 
-            foreach (var uv in owned)
-                uv.IsActive = uv.VehicleId == vehicleId;
+            // Якщо вже активний — все ок
+            if (target.IsActive)
+            {
+                tx.Commit();
+                return Ok(new { ok = true, activeVehicleId = vehicleId });
+            }
 
+            // 1) зняти активний, якщо є
+            var currentActive = owned.FirstOrDefault(x => x.IsActive);
+            if (currentActive != null)
+            {
+                currentActive.IsActive = false;
+                _db.SaveChanges(); // важливо: зняти TRUE перед встановленням нового
+            }
+
+            // 2) позначити ціль активним
+            target.IsActive = true;
             _db.SaveChanges();
+
+            tx.Commit();
             return Ok(new { ok = true, activeVehicleId = vehicleId });
         }
 
         // ========================================
+        // POST /user-vehicles/me/buy/{code}
+        // Покупка за кодом каталогу Vehicle
+        // ========================================
+        [HttpPost("me/buy/{code}")]
+        public IActionResult BuyVehicle(string code)
+        {
+            int uid = CurrentUserId();
+
+            var player = _db.Players.FirstOrDefault(p => p.Id == uid);
+            if (player == null)
+                return NotFound("Player not found.");
+
+            var vehicle = _db.Vehicles.FirstOrDefault(v => v.Code == code);
+            if (vehicle == null)
+                return NotFound("Vehicle code not found.");
+
+            if (_db.UserVehicles.Any(x => x.UserId == uid && x.VehicleId == vehicle.Id))
+                return Conflict("Vehicle already owned.");
+
+            if (player.Bolts < vehicle.PurchaseCost)
+                return BadRequest("Not enough Bolts.");
+
+            player.Bolts -= vehicle.PurchaseCost;
+
+            var uv = new UserVehicle
+            {
+                UserId = uid,
+                VehicleId = vehicle.Id,
+                Xp = 0,
+                IsActive = false
+            };
+
+            _db.UserVehicles.Add(uv);
+            _db.SaveChanges();
+
+            return Ok(new
+            {
+                ok = true,
+                userVehicleId = uv.Id,
+                vehicleId = uv.VehicleId,
+                newBolts = player.Bolts
+            });
+        }
+
+        // ========================================
+        // POST /user-vehicles/me/sell/{vehicleId}
+        // Продає техніку за 50% від PurchaseCost (безпечний порядок апдейтів)
+        // ========================================
+        [HttpPost("me/sell/{vehicleId:int}")]
+        public IActionResult Sell(int vehicleId)
+        {
+            int uid = CurrentUserId();
+
+            using var tx = _db.Database.BeginTransaction();
+
+            var owned = _db.UserVehicles
+                .Where(x => x.UserId == uid)
+                .Include(x => x.Vehicle)
+                .ToList();
+
+            if (owned.Count <= 1)
+                return BadRequest("Cannot sell your last remaining vehicle.");
+
+            var uv = owned.FirstOrDefault(x => x.VehicleId == vehicleId);
+            if (uv == null)
+                return NotFound("Vehicle not found.");
+
+            if (uv.Vehicle == null)
+                return BadRequest("Vehicle data is missing.");
+
+            var player = _db.Players.FirstOrDefault(p => p.Id == uid);
+            if (player == null)
+                return NotFound("Player not found.");
+
+            int refund = Math.Max(0, uv.Vehicle.PurchaseCost / 2);
+
+            // Якщо активний — спершу зняти активність, зберегти
+            bool wasActive = uv.IsActive;
+            if (wasActive)
+            {
+                uv.IsActive = false;
+                _db.SaveChanges(); // зняли TRUE, індекс щасливий
+            }
+
+            // Видалити та повернути болти
+            _db.UserVehicles.Remove(uv);
+            player.Bolts += refund;
+            _db.SaveChanges();
+
+            // Якщо продавали активного — призначити інший активним і зберегти
+            if (wasActive)
+            {
+                var replacement = _db.UserVehicles
+                    .Where(x => x.UserId == uid)
+                    .OrderByDescending(x => x.Xp) // або інша твоя логіка вибору
+                    .FirstOrDefault();
+
+                if (replacement != null)
+                {
+                    replacement.IsActive = true;
+                    _db.SaveChanges();
+                }
+            }
+
+            tx.Commit();
+            return Ok(new
+            {
+                ok = true,
+                soldVehicleId = vehicleId,
+                refundBolts = refund,
+                newBolts = player.Bolts
+            });
+        }
+
+        // ========================================
         // POST /user-vehicles/me/add-by-code/{code}
+        // (dev/debug) Додає безкоштовно
         // ========================================
         [HttpPost("me/add-by-code/{code}")]
         public IActionResult AddByCode(string code)
         {
             int uid = CurrentUserId();
 
-            Vehicle? vehicle = _db.Vehicles.FirstOrDefault(v => v.Code == code);
+            var vehicle = _db.Vehicles.FirstOrDefault(v => v.Code == code);
             if (vehicle == null)
                 return NotFound("Vehicle code not found.");
 
@@ -99,7 +237,7 @@ namespace WarOfMachines.Controllers
             if (already)
                 return Conflict("Vehicle already owned.");
 
-            UserVehicle uv = new UserVehicle
+            var uv = new UserVehicle
             {
                 UserId = uid,
                 VehicleId = vehicle.Id,
@@ -115,43 +253,54 @@ namespace WarOfMachines.Controllers
 
         // ========================================
         // DELETE /user-vehicles/me/{vehicleId}
-        // Продає техніку (з урахуванням активної)
+        // Жорстке видалення (з урахуванням активної) — безпечний порядок
         // ========================================
         [HttpDelete("me/{vehicleId:int}")]
         public IActionResult Remove(int vehicleId)
         {
             int uid = CurrentUserId();
 
-            List<UserVehicle> owned = _db.UserVehicles.Where(x => x.UserId == uid).Include(x => x.Vehicle).ToList();
+            using var tx = _db.Database.BeginTransaction();
+
+            var owned = _db.UserVehicles
+                .Where(x => x.UserId == uid)
+                .Include(x => x.Vehicle)
+                .ToList();
 
             if (owned.Count <= 1)
-            {
                 return BadRequest("Cannot sell your last remaining vehicle.");
-            }
 
             var uv = owned.FirstOrDefault(x => x.VehicleId == vehicleId);
             if (uv == null)
-            {
                 return NotFound("Vehicle not found.");
-            }
 
-            // Якщо продаємо активного — активуємо інший
-            if (uv.IsActive)
+            bool wasActive = uv.IsActive;
+
+            if (wasActive)
             {
-                var replacement = owned.FirstOrDefault(x => x.VehicleId != vehicleId);
-                if (replacement != null)
-                {
-                    replacement.IsActive = true;
-                }
+                uv.IsActive = false;
+                _db.SaveChanges(); // зняти TRUE до будь-яких інших рухів
             }
 
             _db.UserVehicles.Remove(uv);
             _db.SaveChanges();
 
-            return Ok(new
+            if (wasActive)
             {
-                ok = true, soldVehicleId = vehicleId
-            });
+                var replacement = _db.UserVehicles
+                    .Where(x => x.UserId == uid)
+                    .OrderByDescending(x => x.Xp)
+                    .FirstOrDefault();
+
+                if (replacement != null)
+                {
+                    replacement.IsActive = true;
+                    _db.SaveChanges();
+                }
+            }
+
+            tx.Commit();
+            return Ok(new { ok = true, soldVehicleId = vehicleId });
         }
 
         // ========================================
@@ -174,7 +323,10 @@ namespace WarOfMachines.Controllers
                 })
                 .ToList();
 
-            var freeXp = _db.Players.Where(p => p.Id == userId).Select(p => p.FreeXp).FirstOrDefault();
+            var freeXp = _db.Players
+                .Where(p => p.Id == userId)
+                .Select(p => p.FreeXp)
+                .FirstOrDefault();
 
             return Ok(new
             {
