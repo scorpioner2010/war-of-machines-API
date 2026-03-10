@@ -9,25 +9,13 @@ using WarOfMachines.Logging; // our in-memory log store (with Seq + GetSince)
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ---------- DB (PostgreSQL) ----------
-string? connectionString = builder.Configuration.GetConnectionString("DefaultConnection")
-                           ?? builder.Configuration["DATABASE_URL"];
-if (string.IsNullOrWhiteSpace(connectionString))
-    throw new InvalidOperationException("Connection string not configured.");
+// ---------- DB (local temporary SQLite) ----------
+var tempDbFolder = builder.Configuration["TempDatabase:Folder"] ?? "App_Data";
+var tempDbFile = builder.Configuration["TempDatabase:FileName"] ?? "war-of-machines-dev.db";
+var tempDbPath = Path.Combine(builder.Environment.ContentRootPath, tempDbFolder, tempDbFile);
+Directory.CreateDirectory(Path.GetDirectoryName(tempDbPath)!);
 
-static string EnsureSsl(string cs)
-{
-    if (cs.IndexOf("sslmode", StringComparison.OrdinalIgnoreCase) >= 0 ||
-        cs.IndexOf("Ssl Mode", StringComparison.OrdinalIgnoreCase) >= 0)
-        return cs;
-
-    return cs.Contains("://")
-        ? (cs.Contains("?") ? cs + "&sslmode=require" : cs + "?sslmode=require")
-        : cs + ";Ssl Mode=Require";
-}
-connectionString = EnsureSsl(connectionString);
-
-builder.Services.AddDbContext<AppDbContext>(opts => opts.UseNpgsql(connectionString));
+builder.Services.AddDbContext<AppDbContext>(opts => opts.UseSqlite($"Data Source={tempDbPath}"));
 
 // ---------- Controllers + JSON (camelCase) ----------
 builder.Services
@@ -109,8 +97,12 @@ InMemoryLogStore.Add(new LogEvent { Level = Microsoft.Extensions.Logging.LogLeve
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    db.Database.Migrate();
-    InMemoryLogStore.Add(new LogEvent { Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Database migrated." });
+    db.Database.EnsureCreated();
+    InMemoryLogStore.Add(new LogEvent
+    {
+        Level = Microsoft.Extensions.Logging.LogLevel.Information,
+        Message = $"Temporary SQLite database ensured at: {tempDbPath}"
+    });
 
     SeedData.Initialize(db);
     InMemoryLogStore.Add(new LogEvent { Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Seed data ensured." });
