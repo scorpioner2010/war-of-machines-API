@@ -5,25 +5,24 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using WarOfMachines.Data;
+using WarOfMachines.Infrastructure;
 using WarOfMachines.Logging; // our in-memory log store (with Seq + GetSince)
+
+LocalEnvFileLoader.TryLoad(Directory.GetCurrentDirectory());
 
 var builder = WebApplication.CreateBuilder(args);
 
 // ---------- DB ----------
-var postgresConnectionString = builder.Configuration.GetConnectionString("DefaultConnection");
-var tempDbFolder = builder.Configuration["TempDatabase:Folder"] ?? "App_Data";
-var tempDbFile = builder.Configuration["TempDatabase:FileName"] ?? "war-of-machines-dev.db";
-var tempDbPath = Path.Combine(builder.Environment.ContentRootPath, tempDbFolder, tempDbFile);
-
-if (!string.IsNullOrWhiteSpace(postgresConnectionString))
+var databaseConnectionString = DatabaseConnectionStringFactory.Resolve(builder.Configuration);
+builder.Services.AddDbContext<AppDbContext>(opts =>
 {
-    builder.Services.AddDbContext<AppDbContext>(opts => opts.UseNpgsql(postgresConnectionString));
-}
-else
-{
-    Directory.CreateDirectory(Path.GetDirectoryName(tempDbPath)!);
-    builder.Services.AddDbContext<AppDbContext>(opts => opts.UseSqlite($"Data Source={tempDbPath}"));
-}
+    opts.UseNpgsql(
+        databaseConnectionString,
+        npgsqlOptions => npgsqlOptions.EnableRetryOnFailure(
+            maxRetryCount: 5,
+            maxRetryDelay: TimeSpan.FromSeconds(10),
+            errorCodesToAdd: null));
+});
 
 // ---------- Controllers + JSON (camelCase) ----------
 builder.Services
@@ -107,24 +106,12 @@ InMemoryLogStore.Add(new LogEvent { Level = Microsoft.Extensions.Logging.LogLeve
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    if (!string.IsNullOrWhiteSpace(postgresConnectionString))
+    db.Database.Migrate();
+    InMemoryLogStore.Add(new LogEvent
     {
-        db.Database.Migrate();
-        InMemoryLogStore.Add(new LogEvent
-        {
-            Level = Microsoft.Extensions.Logging.LogLevel.Information,
-            Message = "PostgreSQL database migrated."
-        });
-    }
-    else
-    {
-        db.Database.EnsureCreated();
-        InMemoryLogStore.Add(new LogEvent
-        {
-            Level = Microsoft.Extensions.Logging.LogLevel.Information,
-            Message = $"Temporary SQLite database ensured at: {tempDbPath}"
-        });
-    }
+        Level = Microsoft.Extensions.Logging.LogLevel.Information,
+        Message = "PostgreSQL database migrated."
+    });
 
     SeedData.Initialize(db);
     InMemoryLogStore.Add(new LogEvent { Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Seed data ensured." });

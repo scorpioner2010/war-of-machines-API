@@ -1,0 +1,7 @@
+.env.local
+App_Data/
+bin/
+obj/
+.vs/
+.idea/
+*.user
