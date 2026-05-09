@@ -85,127 +85,148 @@ namespace WarOfMachines.Controllers
         public IActionResult EndMatch(int matchId, [FromBody] EndMatchRequest req)
         {
             if (req == null || req.Participants == null || req.Participants.Count == 0)
-                return BadRequest("Participants required.");
-
-            var match = _db.Matches.FirstOrDefault(m => m.Id == matchId);
-            if (match == null)
-                return NotFound("Match not found.");
-
-            if (match.EndedAt != null)
-                return BadRequest("Match already ended.");
-
-            bool alreadyHasParticipants = _db.MatchParticipants.Any(x => x.MatchId == matchId);
-            if (alreadyHasParticipants)
-                return Conflict("Results for this match were already submitted.");
-
-            var duplicateUsers = req.Participants
-                .GroupBy(p => p.UserId)
-                .Where(g => g.Count() > 1)
-                .Select(g => g.Key)
-                .ToList();
-
-            if (duplicateUsers.Count > 0)
-                return BadRequest($"Duplicate participants: {string.Join(",", duplicateUsers)}");
-
-            var userIds = req.Participants.Select(p => p.UserId).Distinct().ToList();
-            var users = _db.Players.Where(u => userIds.Contains(u.Id)).ToDictionary(u => u.Id, u => u);
-
-            var missingUsers = userIds.Where(id => !users.ContainsKey(id)).ToList();
-            if (missingUsers.Count > 0)
-                return BadRequest($"Unknown users: {string.Join(",", missingUsers)}");
-
-            var teamToUserIds = req.Participants
-                .GroupBy(p => p.Team)
-                .ToDictionary(g => g.Key, g => g.Select(x => x.UserId).ToList());
-
-            var teamAvgMmr = new Dictionary<int, double>();
-            foreach (var kv in teamToUserIds)
             {
-                var list = kv.Value.Where(id => users.ContainsKey(id)).Select(id => users[id].Mmr).ToList();
-                teamAvgMmr[kv.Key] = list.Count > 0 ? list.Average() : 1000.0;
+                return BadRequest("Participants required.");
             }
 
-            using var tx = _db.Database.BeginTransaction();
-
-            match.EndedAt = DateTimeOffset.UtcNow;
-
-            foreach (var raw in req.Participants)
+            var strategy = _db.Database.CreateExecutionStrategy();
+            return strategy.Execute<IActionResult>(() =>
             {
-                var user = users[raw.UserId];
+                using var tx = _db.Database.BeginTransaction();
 
-                int kills = Math.Clamp(raw.Kills, MinKills, MaxKillsPerBattle);
-                int damage = Math.Clamp(raw.Damage, MinDamage, MaxDamagePerBattle);
-                string result = NormalizeResult(raw.Result);
-
-                // --- XP ---
-                int xpBase = result switch
-                {
-                    "win" => XpWinBase,
-                    "draw" => XpDrawBase,
-                    _ => XpLoseBase
-                };
-                int xpFromDamage = (int)Math.Round(damage * XpPerDamage, MidpointRounding.AwayFromZero);
-                int xpFromKills = kills * XpPerKill;
-                int xpTotal = Math.Clamp(xpBase + xpFromDamage + xpFromKills, 0, XpCapPerBattle);
-
-                // --- Bolts ---
-                int bolts = BoltsBaseParticipation
-                            + (result == "win" ? BoltsWinBonus : 0)
-                            + (damage * BoltsPerDamage)
-                            + (kills * BoltsPerKill);
-                bolts = Math.Clamp(bolts, 0, BoltsCapPerBattle);
-
-                // --- MMR ---
-                int enemyTeam = FindEnemyTeam(teamToUserIds.Keys.ToList(), raw.Team);
-                double enemyAvg = teamAvgMmr.TryGetValue(enemyTeam, out var en) ? en : 1000.0;
-                double expected = 1.0 / (1.0 + Math.Pow(10.0, (enemyAvg - user.Mmr) / 400.0));
-                double score = result switch
-                {
-                    "win" => 1.0,
-                    "draw" => 0.5,
-                    _ => 0.0
-                };
-                int mmrDelta = (int)Math.Round(MmrK * (score - expected), MidpointRounding.AwayFromZero);
-                mmrDelta = Math.Clamp(mmrDelta, MmrCapLoss, MmrCapGain);
-
-                bool existsForUser = _db.MatchParticipants.Any(x => x.MatchId == match.Id && x.UserId == raw.UserId);
-                if (existsForUser)
+                var match = _db.Matches.FirstOrDefault(m => m.Id == matchId);
+                if (match == null)
                 {
                     tx.Rollback();
-                    return Conflict($"Results already submitted for user {raw.UserId} in this match.");
+                    return NotFound("Match not found.");
                 }
 
-                var mp = new MatchParticipant
+                if (match.EndedAt != null)
                 {
-                    MatchId = match.Id,
-                    UserId = raw.UserId,
-                    VehicleId = raw.VehicleId,
-                    Team = raw.Team,
-                    Result = result,
-                    Kills = kills,
-                    Damage = damage,
-                    XpEarned = xpTotal,
-                    MmrDelta = mmrDelta
-                };
-                _db.MatchParticipants.Add(mp);
-
-                // --- Оновлення прогресу ---
-                user.Mmr += mmrDelta;
-                user.Bolts += bolts;
-                user.FreeXp += (int)Math.Round(xpTotal * FreeXpPercent, MidpointRounding.AwayFromZero);
-
-                // Знаходимо техніку гравця
-                var uv = _db.UserVehicles.FirstOrDefault(v => v.UserId == raw.UserId && v.VehicleId == raw.VehicleId);
-                if (uv != null)
-                {
-                    uv.Xp += xpTotal;
+                    tx.Rollback();
+                    return BadRequest("Match already ended.");
                 }
-            }
 
-            _db.SaveChanges();
-            tx.Commit();
+                bool alreadyHasParticipants = _db.MatchParticipants.Any(x => x.MatchId == matchId);
+                if (alreadyHasParticipants)
+                {
+                    tx.Rollback();
+                    return Conflict("Results for this match were already submitted.");
+                }
 
-            return Ok(new { ok = true });
+                var duplicateUsers = req.Participants
+                    .GroupBy(p => p.UserId)
+                    .Where(g => g.Count() > 1)
+                    .Select(g => g.Key)
+                    .ToList();
+
+                if (duplicateUsers.Count > 0)
+                {
+                    tx.Rollback();
+                    return BadRequest($"Duplicate participants: {string.Join(",", duplicateUsers)}");
+                }
+
+                var userIds = req.Participants.Select(p => p.UserId).Distinct().ToList();
+                var users = _db.Players.Where(u => userIds.Contains(u.Id)).ToDictionary(u => u.Id, u => u);
+
+                var missingUsers = userIds.Where(id => !users.ContainsKey(id)).ToList();
+                if (missingUsers.Count > 0)
+                {
+                    tx.Rollback();
+                    return BadRequest($"Unknown users: {string.Join(",", missingUsers)}");
+                }
+
+                var teamToUserIds = req.Participants
+                    .GroupBy(p => p.Team)
+                    .ToDictionary(g => g.Key, g => g.Select(x => x.UserId).ToList());
+
+                var teamAvgMmr = new Dictionary<int, double>();
+                foreach (var kv in teamToUserIds)
+                {
+                    var list = kv.Value.Where(id => users.ContainsKey(id)).Select(id => users[id].Mmr).ToList();
+                    teamAvgMmr[kv.Key] = list.Count > 0 ? list.Average() : 1000.0;
+                }
+
+                match.EndedAt = DateTimeOffset.UtcNow;
+
+                foreach (var raw in req.Participants)
+                {
+                    var user = users[raw.UserId];
+
+                    int kills = Math.Clamp(raw.Kills, MinKills, MaxKillsPerBattle);
+                    int damage = Math.Clamp(raw.Damage, MinDamage, MaxDamagePerBattle);
+                    string result = NormalizeResult(raw.Result);
+
+                    // --- XP ---
+                    int xpBase = result switch
+                    {
+                        "win" => XpWinBase,
+                        "draw" => XpDrawBase,
+                        _ => XpLoseBase
+                    };
+                    int xpFromDamage = (int)Math.Round(damage * XpPerDamage, MidpointRounding.AwayFromZero);
+                    int xpFromKills = kills * XpPerKill;
+                    int xpTotal = Math.Clamp(xpBase + xpFromDamage + xpFromKills, 0, XpCapPerBattle);
+
+                    // --- Bolts ---
+                    int bolts = BoltsBaseParticipation
+                                + (result == "win" ? BoltsWinBonus : 0)
+                                + (damage * BoltsPerDamage)
+                                + (kills * BoltsPerKill);
+                    bolts = Math.Clamp(bolts, 0, BoltsCapPerBattle);
+
+                    // --- MMR ---
+                    int enemyTeam = FindEnemyTeam(teamToUserIds.Keys.ToList(), raw.Team);
+                    double enemyAvg = teamAvgMmr.TryGetValue(enemyTeam, out var en) ? en : 1000.0;
+                    double expected = 1.0 / (1.0 + Math.Pow(10.0, (enemyAvg - user.Mmr) / 400.0));
+                    double score = result switch
+                    {
+                        "win" => 1.0,
+                        "draw" => 0.5,
+                        _ => 0.0
+                    };
+                    int mmrDelta = (int)Math.Round(MmrK * (score - expected), MidpointRounding.AwayFromZero);
+                    mmrDelta = Math.Clamp(mmrDelta, MmrCapLoss, MmrCapGain);
+
+                    bool existsForUser = _db.MatchParticipants.Any(x => x.MatchId == match.Id && x.UserId == raw.UserId);
+                    if (existsForUser)
+                    {
+                        tx.Rollback();
+                        return Conflict($"Results already submitted for user {raw.UserId} in this match.");
+                    }
+
+                    var mp = new MatchParticipant
+                    {
+                        MatchId = match.Id,
+                        UserId = raw.UserId,
+                        VehicleId = raw.VehicleId,
+                        Team = raw.Team,
+                        Result = result,
+                        Kills = kills,
+                        Damage = damage,
+                        XpEarned = xpTotal,
+                        MmrDelta = mmrDelta
+                    };
+                    _db.MatchParticipants.Add(mp);
+
+                    // --- Оновлення прогресу ---
+                    user.Mmr += mmrDelta;
+                    user.Bolts += bolts;
+                    user.FreeXp += (int)Math.Round(xpTotal * FreeXpPercent, MidpointRounding.AwayFromZero);
+
+                    // Знаходимо техніку гравця
+                    var uv = _db.UserVehicles.FirstOrDefault(v => v.UserId == raw.UserId && v.VehicleId == raw.VehicleId);
+                    if (uv != null)
+                    {
+                        uv.Xp += xpTotal;
+                    }
+                }
+
+                _db.SaveChanges();
+                tx.Commit();
+
+                return Ok(new { ok = true });
+            });
         }
 
         private static string NormalizeResult(string input)

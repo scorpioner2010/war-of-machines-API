@@ -74,15 +74,38 @@ namespace WarOfMachines.Controllers
         {
             int uid = CurrentUserId();
 
-            var owned = _db.UserVehicles.Where(x => x.UserId == uid).ToList();
-            var target = owned.FirstOrDefault(x => x.VehicleId == vehicleId);
-            if (target == null) return NotFound("User does not own this vehicle.");
+            var strategy = _db.Database.CreateExecutionStrategy();
+            return strategy.Execute<IActionResult>(() =>
+            {
+                using var tx = _db.Database.BeginTransaction();
 
-            foreach (var uv in owned)
-                uv.IsActive = (uv.VehicleId == vehicleId);
+                var owned = _db.UserVehicles.Where(x => x.UserId == uid).ToList();
+                var target = owned.FirstOrDefault(x => x.VehicleId == vehicleId);
+                if (target == null)
+                {
+                    tx.Rollback();
+                    return NotFound("User does not own this vehicle.");
+                }
 
-            _db.SaveChanges();
-            return Ok(new { ok = true, activeVehicleId = vehicleId });
+                if (target.IsActive)
+                {
+                    tx.Commit();
+                    return Ok(new { ok = true, activeVehicleId = vehicleId });
+                }
+
+                var currentActive = owned.FirstOrDefault(x => x.IsActive);
+                if (currentActive != null)
+                {
+                    currentActive.IsActive = false;
+                    _db.SaveChanges();
+                }
+
+                target.IsActive = true;
+                _db.SaveChanges();
+
+                tx.Commit();
+                return Ok(new { ok = true, activeVehicleId = vehicleId });
+            });
         }
     }
 
