@@ -77,6 +77,7 @@ builder.Services
     });
 
 builder.Services.AddAuthorization();
+builder.Services.AddSingleton<UnityServerStatusStore>();
 
 // ❌ no global logging providers (only explicit events we add ourselves)
 
@@ -99,6 +100,7 @@ app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllers();
+app.MapGet("/", () => Results.Redirect("/admin"));
 
 // ---------- Auto-migrate + Seed (explicit minimal events) ----------
 InMemoryLogStore.Add(new LogEvent { Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Server starting..." });
