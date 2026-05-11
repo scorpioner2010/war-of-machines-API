@@ -41,7 +41,35 @@ namespace WarOfMachines.Data
             Vehicle EnsureVehicle(Vehicle v)
             {
                 var existing = db.Vehicles.FirstOrDefault(x => x.Code == v.Code);
-                if (existing != null) return existing;
+                if (existing != null)
+                {
+                    existing.Name = v.Name;
+                    existing.FactionId = v.FactionId;
+                    existing.Branch = v.Branch;
+                    existing.Class = v.Class;
+                    existing.Level = v.Level;
+                    existing.PurchaseCost = v.PurchaseCost;
+                    existing.HP = v.HP;
+                    existing.Damage = v.Damage;
+                    existing.Penetration = v.Penetration;
+                    existing.ReloadTime = v.ReloadTime;
+                    existing.Accuracy = v.Accuracy;
+                    existing.AimTime = v.AimTime;
+                    existing.Speed = v.Speed;
+                    existing.Acceleration = v.Acceleration;
+                    existing.TraverseSpeed = v.TraverseSpeed;
+                    existing.TurretTraverseSpeed = v.TurretTraverseSpeed;
+                    existing.TurretArmorFront = v.TurretArmorFront;
+                    existing.TurretArmorSide = v.TurretArmorSide;
+                    existing.TurretArmorRear = v.TurretArmorRear;
+                    existing.HullArmorFront = v.HullArmorFront;
+                    existing.HullArmorSide = v.HullArmorSide;
+                    existing.HullArmorRear = v.HullArmorRear;
+                    existing.IsVisible = v.IsVisible;
+                    db.SaveChanges();
+                    return existing;
+                }
+
                 db.Vehicles.Add(v);
                 db.SaveChanges();
                 return v;
@@ -51,7 +79,10 @@ namespace WarOfMachines.Data
             {
                 bool exists = db.VehicleResearchRequirements
                     .Any(r => r.PredecessorVehicleId == predecessorId && r.SuccessorVehicleId == successorId);
-                if (exists) return;
+                if (exists)
+                {
+                    return;
+                }
 
                 db.VehicleResearchRequirements.Add(new VehicleResearchRequirement
                 {
@@ -65,24 +96,23 @@ namespace WarOfMachines.Data
             // --- Vehicles (ідемпотентно; без if (!db.Vehicles.Any())) ---
 
             // Iron Alliance (tracked) — L1 + три L2
-            var iaStarter = db.Vehicles.FirstOrDefault(v => v.Code == "ia_l1_starter")
-                            ?? EnsureVehicle(new Vehicle
-                            {
-                                Code = "ia_l1_starter",
-                                Name = "IA Skirmisher",
-                                FactionId = iron.Id,
-                                Branch = "tracked",
-                                Class = VehicleClass.Scout,
-                                Level = 1,
-                                PurchaseCost = 0,
+            var iaStarter = EnsureVehicle(new Vehicle
+            {
+                Code = "ia_l1_starter",
+                Name = "IA Skirmisher",
+                FactionId = iron.Id,
+                Branch = "tracked",
+                Class = VehicleClass.Scout,
+                Level = 1,
+                PurchaseCost = 0,
 
-                                HP = 120, Damage = 12, Penetration = 40,
-                                ReloadTime = 2.5f, Accuracy = 0.85f, AimTime = 1.8f,
-                                Speed = 6.0f, Acceleration = 3.5f, TraverseSpeed = 35f, TurretTraverseSpeed = 30f,
-                                TurretArmorFront = 40, TurretArmorSide = 25, TurretArmorRear = 20,
-                                HullArmorFront = 50, HullArmorSide = 30, HullArmorRear = 25,
-                                IsVisible = true
-                            });
+                HP = 105, Damage = 10, Penetration = 84,
+                ReloadTime = 2.7f, Accuracy = 0.84f, AimTime = 1.85f,
+                Speed = 6.4f, Acceleration = 3.6f, TraverseSpeed = 34f, TurretTraverseSpeed = 30f,
+                TurretArmorFront = 32, TurretArmorSide = 20, TurretArmorRear = 16,
+                HullArmorFront = 38, HullArmorSide = 24, HullArmorRear = 18,
+                IsVisible = true
+            });
 
             var iaL2Scout = EnsureVehicle(new Vehicle
             {
@@ -93,11 +123,11 @@ namespace WarOfMachines.Data
                 Class = VehicleClass.Scout,
                 Level = 2,
                 PurchaseCost = 5000,
-                HP = 150, Damage = 16, Penetration = 60,
-                ReloadTime = 2.3f, Accuracy = 0.87f, AimTime = 1.6f,
-                Speed = 7.0f, Acceleration = 3.8f, TraverseSpeed = 38f, TurretTraverseSpeed = 32f,
-                TurretArmorFront = 45, TurretArmorSide = 28, TurretArmorRear = 22,
-                HullArmorFront = 55, HullArmorSide = 32, HullArmorRear = 26,
+                HP = 180, Damage = 20, Penetration = 74,
+                ReloadTime = 2.35f, Accuracy = 0.87f, AimTime = 1.55f,
+                Speed = 7.2f, Acceleration = 4.0f, TraverseSpeed = 39f, TurretTraverseSpeed = 34f,
+                TurretArmorFront = 50, TurretArmorSide = 31, TurretArmorRear = 22,
+                HullArmorFront = 58, HullArmorSide = 35, HullArmorRear = 25,
                 IsVisible = true
             });
 
@@ -110,11 +140,11 @@ namespace WarOfMachines.Data
                 Class = VehicleClass.Guardian,
                 Level = 2,
                 PurchaseCost = 9000,
-                HP = 220, Damage = 22, Penetration = 75,
-                ReloadTime = 2.8f, Accuracy = 0.84f, AimTime = 1.9f,
-                Speed = 5.8f, Acceleration = 3.0f, TraverseSpeed = 32f, TurretTraverseSpeed = 28f,
-                TurretArmorFront = 70, TurretArmorSide = 45, TurretArmorRear = 30,
-                HullArmorFront = 85, HullArmorSide = 55, HullArmorRear = 35,
+                HP = 250, Damage = 25, Penetration = 86,
+                ReloadTime = 2.85f, Accuracy = 0.84f, AimTime = 1.9f,
+                Speed = 5.9f, Acceleration = 3.1f, TraverseSpeed = 33f, TurretTraverseSpeed = 29f,
+                TurretArmorFront = 76, TurretArmorSide = 50, TurretArmorRear = 34,
+                HullArmorFront = 84, HullArmorSide = 60, HullArmorRear = 40,
                 IsVisible = true
             });
 
@@ -127,11 +157,11 @@ namespace WarOfMachines.Data
                 Class = VehicleClass.Colossus,
                 Level = 2,
                 PurchaseCost = 15000,
-                HP = 320, Damage = 34, Penetration = 90,
-                ReloadTime = 3.3f, Accuracy = 0.80f, AimTime = 2.2f,
-                Speed = 4.8f, Acceleration = 2.4f, TraverseSpeed = 26f, TurretTraverseSpeed = 22f,
-                TurretArmorFront = 110, TurretArmorSide = 70, TurretArmorRear = 50,
-                HullArmorFront = 120, HullArmorSide = 80, HullArmorRear = 55,
+                HP = 340, Damage = 36, Penetration = 96,
+                ReloadTime = 3.45f, Accuracy = 0.80f, AimTime = 2.25f,
+                Speed = 4.7f, Acceleration = 2.4f, TraverseSpeed = 27f, TurretTraverseSpeed = 23f,
+                TurretArmorFront = 116, TurretArmorSide = 72, TurretArmorRear = 50,
+                HullArmorFront = 128, HullArmorSide = 82, HullArmorRear = 58,
                 IsVisible = true
             });
 
@@ -141,24 +171,23 @@ namespace WarOfMachines.Data
             EnsureLink(iaStarter.Id, iaL2Colossus.Id, requiredXp: 1000);
 
             // Nova Syndicate (biped) — L1 + три L2
-            var nvStarter = db.Vehicles.FirstOrDefault(v => v.Code == "nv_l1_starter")
-                            ?? EnsureVehicle(new Vehicle
-                            {
-                                Code = "nv_l1_starter",
-                                Name = "Nova Wisp",
-                                FactionId = nova.Id,
-                                Branch = "biped",
-                                Class = VehicleClass.Scout,
-                                Level = 1,
-                                PurchaseCost = 0,
+            var nvStarter = EnsureVehicle(new Vehicle
+            {
+                Code = "nv_l1_starter",
+                Name = "Nova Wisp",
+                FactionId = nova.Id,
+                Branch = "biped",
+                Class = VehicleClass.Scout,
+                Level = 1,
+                PurchaseCost = 0,
 
-                                HP = 100, Damage = 14, Penetration = 60,
-                                ReloadTime = 2.2f, Accuracy = 0.86f, AimTime = 1.6f,
-                                Speed = 7.0f, Acceleration = 4.0f, TraverseSpeed = 38f, TurretTraverseSpeed = 34f,
-                                TurretArmorFront = 35, TurretArmorSide = 22, TurretArmorRear = 18,
-                                HullArmorFront = 40, HullArmorSide = 26, HullArmorRear = 20,
-                                IsVisible = true
-                            });
+                HP = 100, Damage = 14, Penetration = 90,
+                ReloadTime = 2.8f, Accuracy = 0.86f, AimTime = 1.65f,
+                Speed = 2.7f, Acceleration = 1.5f, TraverseSpeed = 62f, TurretTraverseSpeed = 56f,
+                TurretArmorFront = 30, TurretArmorSide = 19, TurretArmorRear = 14,
+                HullArmorFront = 36, HullArmorSide = 23, HullArmorRear = 16,
+                IsVisible = true
+            });
 
             var nvL2Scout = EnsureVehicle(new Vehicle
             {
@@ -169,11 +198,11 @@ namespace WarOfMachines.Data
                 Class = VehicleClass.Scout,
                 Level = 2,
                 PurchaseCost = 5000,
-                HP = 130, Damage = 18, Penetration = 70,
-                ReloadTime = 2.1f, Accuracy = 0.88f, AimTime = 1.5f,
-                Speed = 7.6f, Acceleration = 4.4f, TraverseSpeed = 40f, TurretTraverseSpeed = 36f,
-                TurretArmorFront = 40, TurretArmorSide = 24, TurretArmorRear = 20,
-                HullArmorFront = 44, HullArmorSide = 28, HullArmorRear = 22,
+                HP = 180, Damage = 29, Penetration = 88,
+                ReloadTime = 2.7f, Accuracy = 0.89f, AimTime = 1.4f,
+                Speed = 3.1f, Acceleration = 1.6f, TraverseSpeed = 72f, TurretTraverseSpeed = 64f,
+                TurretArmorFront = 48, TurretArmorSide = 30, TurretArmorRear = 21,
+                HullArmorFront = 54, HullArmorSide = 34, HullArmorRear = 24,
                 IsVisible = true
             });
 
@@ -186,11 +215,11 @@ namespace WarOfMachines.Data
                 Class = VehicleClass.Guardian,
                 Level = 2,
                 PurchaseCost = 9000,
-                HP = 200, Damage = 24, Penetration = 85,
-                ReloadTime = 2.6f, Accuracy = 0.85f, AimTime = 1.8f,
-                Speed = 6.2f, Acceleration = 3.6f, TraverseSpeed = 34f, TurretTraverseSpeed = 30f,
-                TurretArmorFront = 60, TurretArmorSide = 40, TurretArmorRear = 28,
-                HullArmorFront = 70, HullArmorSide = 48, HullArmorRear = 32,
+                HP = 250, Damage = 36, Penetration = 100,
+                ReloadTime = 3.15f, Accuracy = 0.86f, AimTime = 1.75f,
+                Speed = 2.6f, Acceleration = 1.3f, TraverseSpeed = 66f, TurretTraverseSpeed = 58f,
+                TurretArmorFront = 74, TurretArmorSide = 48, TurretArmorRear = 32,
+                HullArmorFront = 84, HullArmorSide = 56, HullArmorRear = 38,
                 IsVisible = true
             });
 
@@ -203,11 +232,11 @@ namespace WarOfMachines.Data
                 Class = VehicleClass.Colossus,
                 Level = 2,
                 PurchaseCost = 15000,
-                HP = 300, Damage = 36, Penetration = 100,
-                ReloadTime = 3.0f, Accuracy = 0.82f, AimTime = 2.0f,
-                Speed = 5.0f, Acceleration = 2.8f, TraverseSpeed = 28f, TurretTraverseSpeed = 24f,
-                TurretArmorFront = 95, TurretArmorSide = 65, TurretArmorRear = 45,
-                HullArmorFront = 105, HullArmorSide = 72, HullArmorRear = 50,
+                HP = 335, Damage = 50, Penetration = 118,
+                ReloadTime = 3.9f, Accuracy = 0.82f, AimTime = 2.1f,
+                Speed = 2.1f, Acceleration = 1.1f, TraverseSpeed = 60f, TurretTraverseSpeed = 52f,
+                TurretArmorFront = 106, TurretArmorSide = 70, TurretArmorRear = 48,
+                HullArmorFront = 118, HullArmorSide = 80, HullArmorRear = 56,
                 IsVisible = true
             });
 
