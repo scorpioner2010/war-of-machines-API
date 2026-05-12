@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using WarOfMachines.Data;
@@ -11,9 +12,11 @@ using WarOfMachines.Data;
 namespace WarOfMachines.Migrations
 {
     [DbContext(typeof(AppDbContext))]
-    partial class AppDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260512084921_AddVehicleProjectileStats")]
+    partial class AddVehicleProjectileStats
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder
@@ -224,33 +227,6 @@ namespace WarOfMachines.Migrations
                     b.ToTable("UserVehicles");
                 });
 
-            modelBuilder.Entity("WarOfMachines.Models.UserVehicleResearch", b =>
-                {
-                    b.Property<int>("Id")
-                        .ValueGeneratedOnAdd()
-                        .HasColumnType("integer");
-
-                    NpgsqlPropertyBuilderExtensions.UseIdentityByDefaultColumn(b.Property<int>("Id"));
-
-                    b.Property<DateTimeOffset>("ResearchedAt")
-                        .HasColumnType("timestamp with time zone");
-
-                    b.Property<int>("UserId")
-                        .HasColumnType("integer");
-
-                    b.Property<int>("VehicleId")
-                        .HasColumnType("integer");
-
-                    b.HasKey("Id");
-
-                    b.HasIndex("VehicleId");
-
-                    b.HasIndex("UserId", "VehicleId")
-                        .IsUnique();
-
-                    b.ToTable("UserVehicleResearches");
-                });
-
             modelBuilder.Entity("WarOfMachines.Models.Vehicle", b =>
                 {
                     b.Property<int>("Id")
@@ -428,25 +404,6 @@ namespace WarOfMachines.Migrations
                         .WithMany("UserVehicles")
                         .HasForeignKey("PlayerId");
 
-                    b.HasOne("WarOfMachines.Models.Player", "User")
-                        .WithMany()
-                        .HasForeignKey("UserId")
-                        .OnDelete(DeleteBehavior.Cascade)
-                        .IsRequired();
-
-                    b.HasOne("WarOfMachines.Models.Vehicle", "Vehicle")
-                        .WithMany()
-                        .HasForeignKey("VehicleId")
-                        .OnDelete(DeleteBehavior.Restrict)
-                        .IsRequired();
-
-                    b.Navigation("User");
-
-                    b.Navigation("Vehicle");
-                });
-
-            modelBuilder.Entity("WarOfMachines.Models.UserVehicleResearch", b =>
-                {
                     b.HasOne("WarOfMachines.Models.Player", "User")
                         .WithMany()
                         .HasForeignKey("UserId")

@@ -34,7 +34,10 @@ namespace WarOfMachines.Models
         public int PurchaseCost { get; set; } = 0;
 
         public int HP { get; set; } = 0;
-        public int Damage { get; set; } = 0;
+        public float ShellSpeed { get; set; } = 70f;
+        public int ShellsCount { get; set; } = 20;
+        public float DamageMin { get; set; } = 90f;
+        public float DamageMax { get; set; } = 110f;
         public int Penetration { get; set; } = 0;
 
         public float ReloadTime { get; set; } = 0f;

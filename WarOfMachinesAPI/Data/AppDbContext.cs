@@ -10,6 +10,7 @@ namespace WarOfMachines.Data
         public DbSet<Player> Players => Set<Player>();
         public DbSet<Vehicle> Vehicles => Set<Vehicle>();
         public DbSet<UserVehicle> UserVehicles => Set<UserVehicle>();
+        public DbSet<UserVehicleResearch> UserVehicleResearches => Set<UserVehicleResearch>();
         public DbSet<Match> Matches => Set<Match>();
         public DbSet<MatchParticipant> MatchParticipants => Set<MatchParticipant>();
         public DbSet<Faction> Factions => Set<Faction>();
@@ -38,6 +39,27 @@ namespace WarOfMachines.Data
                 .Property(v => v.Code).IsRequired();
             modelBuilder.Entity<Vehicle>()
                 .Property(v => v.Name).IsRequired();
+
+            modelBuilder.Entity<Vehicle>()
+                .Property(v => v.ShellSpeed)
+                .HasDefaultValue(70f);
+            modelBuilder.Entity<Vehicle>()
+                .Property(v => v.ShellsCount)
+                .HasDefaultValue(20);
+            modelBuilder.Entity<Vehicle>()
+                .Property(v => v.DamageMin)
+                .HasDefaultValue(90f);
+            modelBuilder.Entity<Vehicle>()
+                .Property(v => v.DamageMax)
+                .HasDefaultValue(110f);
+
+            modelBuilder.Entity<Vehicle>()
+                .ToTable(t =>
+                {
+                    t.HasCheckConstraint("CK_Vehicles_ShellSpeed_Positive", "\"ShellSpeed\" > 0");
+                    t.HasCheckConstraint("CK_Vehicles_ShellsCount_NonNegative", "\"ShellsCount\" >= 0");
+                    t.HasCheckConstraint("CK_Vehicles_DamageMin_LessOrEqual_DamageMax", "\"DamageMin\" <= \"DamageMax\"");
+                });
 
             modelBuilder.Entity<Vehicle>()
                 .HasOne(v => v.Faction)
@@ -81,6 +103,23 @@ namespace WarOfMachines.Data
                 .HasOne(uv => uv.Vehicle)
                 .WithMany()
                 .HasForeignKey(uv => uv.VehicleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // UserVehicleResearch
+            modelBuilder.Entity<UserVehicleResearch>()
+                .HasIndex(r => new { r.UserId, r.VehicleId })
+                .IsUnique();
+
+            modelBuilder.Entity<UserVehicleResearch>()
+                .HasOne(r => r.User)
+                .WithMany()
+                .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserVehicleResearch>()
+                .HasOne(r => r.Vehicle)
+                .WithMany()
+                .HasForeignKey(r => r.VehicleId)
                 .OnDelete(DeleteBehavior.Restrict);
 
             // MatchParticipant

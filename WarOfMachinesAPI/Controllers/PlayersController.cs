@@ -41,6 +41,14 @@ namespace WarOfMachines.Controllers
                 .ToList();
 
             var active = owned.FirstOrDefault(v => v.IsActive);
+            var researchedVehicles = _db.UserVehicleResearches
+                .Where(r => r.UserId == uid)
+                .Include(r => r.Vehicle)
+                .AsNoTracking()
+                .ToList();
+            var researchedIds = researchedVehicles
+                .Select(r => r.VehicleId)
+                .ToHashSet();
 
             var dto = new PlayerProfileDto
             {
@@ -62,7 +70,15 @@ namespace WarOfMachines.Controllers
                     Code = v.Vehicle?.Code ?? string.Empty,
                     Name = v.Vehicle?.Name ?? string.Empty,
                     IsActive = v.IsActive,
-                    Xp = v.Xp
+                    Xp = v.Xp,
+                    IsResearched = researchedIds.Contains(v.VehicleId)
+                }).ToList(),
+
+                ResearchedVehicles = researchedVehicles.Select(r => new ResearchedVehicleDto
+                {
+                    VehicleId = r.VehicleId,
+                    Code = r.Vehicle?.Code ?? string.Empty,
+                    Name = r.Vehicle?.Name ?? string.Empty
                 }).ToList()
             };
 
@@ -124,6 +140,7 @@ namespace WarOfMachines.Controllers
         public string ActiveVehicleName { get; set; } = "";
 
         public List<OwnedVehicleDto> OwnedVehicles { get; set; } = new();
+        public List<ResearchedVehicleDto> ResearchedVehicles { get; set; } = new();
     }
 
     public class OwnedVehicleDto
@@ -133,5 +150,13 @@ namespace WarOfMachines.Controllers
         public string Name { get; set; } = "";
         public bool IsActive { get; set; }
         public int Xp { get; set; }
+        public bool IsResearched { get; set; }
+    }
+
+    public class ResearchedVehicleDto
+    {
+        public int VehicleId { get; set; }
+        public string Code { get; set; } = "";
+        public string Name { get; set; } = "";
     }
 }

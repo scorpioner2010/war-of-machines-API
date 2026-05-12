@@ -126,6 +126,26 @@ namespace WarOfMachines.Controllers
             };
             _db.UserVehicles.Add(uv);
             _db.SaveChanges();
+
+            EnsureVehicleResearch(userId, starter.Id);
+        }
+
+        private void EnsureVehicleResearch(int userId, int vehicleId)
+        {
+            bool alreadyResearched = _db.UserVehicleResearches
+                .Any(x => x.UserId == userId && x.VehicleId == vehicleId);
+            if (alreadyResearched)
+            {
+                return;
+            }
+
+            _db.UserVehicleResearches.Add(new UserVehicleResearch
+            {
+                UserId = userId,
+                VehicleId = vehicleId,
+                ResearchedAt = DateTimeOffset.UtcNow
+            });
+            _db.SaveChanges();
         }
 
         private string IssueJwt(Player user)

@@ -50,7 +50,10 @@ namespace WarOfMachines.Controllers
                     IsVisible = v.IsVisible, // 🔹 додано
 
                     HP = v.HP,
-                    Damage = v.Damage,
+                    ShellSpeed = v.ShellSpeed,
+                    ShellsCount = v.ShellsCount,
+                    DamageMin = v.DamageMin,
+                    DamageMax = v.DamageMax,
                     Penetration = v.Penetration,
                     ReloadTime = v.ReloadTime,
                     Accuracy = v.Accuracy,
@@ -92,7 +95,10 @@ namespace WarOfMachines.Controllers
                 IsVisible = v.IsVisible, // 🔹 додано
 
                 HP = v.HP,
-                Damage = v.Damage,
+                ShellSpeed = v.ShellSpeed,
+                ShellsCount = v.ShellsCount,
+                DamageMin = v.DamageMin,
+                DamageMax = v.DamageMax,
                 Penetration = v.Penetration,
                 ReloadTime = v.ReloadTime,
                 Accuracy = v.Accuracy,
@@ -131,7 +137,10 @@ namespace WarOfMachines.Controllers
                 IsVisible = v.IsVisible, // 🔹 додано
 
                 HP = v.HP,
-                Damage = v.Damage,
+                ShellSpeed = v.ShellSpeed,
+                ShellsCount = v.ShellsCount,
+                DamageMin = v.DamageMin,
+                DamageMax = v.DamageMax,
                 Penetration = v.Penetration,
                 ReloadTime = v.ReloadTime,
                 Accuracy = v.Accuracy,
@@ -241,6 +250,10 @@ namespace WarOfMachines.Controllers
                     level = v.Level,
                     branch = v.Branch,
                     factionCode = v.Faction != null ? v.Faction.Code : string.Empty,
+                    shellSpeed = v.ShellSpeed,
+                    shellsCount = v.ShellsCount,
+                    damageMin = v.DamageMin,
+                    damageMax = v.DamageMax,
                     isVisible = v.IsVisible // 🔹 додано
                 })
                 .ToList();
@@ -278,7 +291,10 @@ namespace WarOfMachines.Controllers
         public bool IsVisible { get; set; } // 🔹 нове поле
 
         public int HP { get; set; }
-        public int Damage { get; set; }
+        public float ShellSpeed { get; set; }
+        public int ShellsCount { get; set; }
+        public float DamageMin { get; set; }
+        public float DamageMax { get; set; }
         public int Penetration { get; set; }
 
         public float ReloadTime { get; set; }

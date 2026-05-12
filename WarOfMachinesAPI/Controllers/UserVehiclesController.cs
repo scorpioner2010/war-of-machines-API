@@ -35,6 +35,10 @@ namespace WarOfMachines.Controllers
         public IActionResult GetMyVehicles()
         {
             int uid = CurrentUserId();
+            var researchedIds = _db.UserVehicleResearches
+                .Where(x => x.UserId == uid)
+                .Select(x => x.VehicleId)
+                .ToHashSet();
 
             var list = _db.UserVehicles
                 .Where(x => x.UserId == uid)
@@ -46,7 +50,8 @@ namespace WarOfMachines.Controllers
                     VehicleCode = x.Vehicle != null ? x.Vehicle.Code : string.Empty,
                     VehicleName = x.Vehicle != null ? x.Vehicle.Name : string.Empty,
                     Xp = x.Xp,
-                    IsActive = x.IsActive
+                    IsActive = x.IsActive,
+                    IsResearched = researchedIds.Contains(x.VehicleId)
                 })
                 .ToList();
 
@@ -132,6 +137,9 @@ namespace WarOfMachines.Controllers
             if (_db.UserVehicles.Any(x => x.UserId == uid && x.VehicleId == vehicle.Id))
                 return Conflict("Vehicle already owned.");
 
+            if (!IsVehicleResearchedForPurchase(uid, vehicle.Id))
+                return BadRequest("Vehicle is not researched.");
+
             if (player.Bolts < vehicle.PurchaseCost)
                 return BadRequest("Not enough Bolts.");
 
@@ -146,6 +154,7 @@ namespace WarOfMachines.Controllers
             };
 
             _db.UserVehicles.Add(uv);
+            EnsureResearch(uid, vehicle.Id);
             _db.SaveChanges();
 
             return Ok(new
@@ -244,6 +253,123 @@ namespace WarOfMachines.Controllers
         }
 
         // ========================================
+        // POST /user-vehicles/research/{vehicleId}
+        // Research unlock spends XP from the selected predecessor vehicle.
+        // Buying is a separate step and is allowed only after this succeeds.
+        // ========================================
+        [HttpPost("research/{vehicleId:int}")]
+        public IActionResult ResearchVehicle(int vehicleId, [FromBody] ResearchVehicleRequest? request)
+        {
+            int uid = CurrentUserId();
+
+            var strategy = _db.Database.CreateExecutionStrategy();
+            return strategy.Execute<IActionResult>(() =>
+            {
+                using var tx = _db.Database.BeginTransaction();
+
+                var successor = _db.Vehicles.FirstOrDefault(v => v.Id == vehicleId);
+                if (successor == null)
+                {
+                    tx.Rollback();
+                    return NotFound("Vehicle not found.");
+                }
+
+                if (!successor.IsVisible)
+                {
+                    tx.Rollback();
+                    return BadRequest("Vehicle is not available.");
+                }
+
+                if (_db.UserVehicles.Any(x => x.UserId == uid && x.VehicleId == vehicleId))
+                {
+                    EnsureResearch(uid, vehicleId);
+                    _db.SaveChanges();
+                    tx.Commit();
+                    return Ok(new
+                    {
+                        ok = true,
+                        vehicleId,
+                        alreadyOwned = true,
+                        alreadyResearched = true,
+                        spentXp = 0,
+                        predecessorVehicleId = 0,
+                        remainingPredecessorXp = 0
+                    });
+                }
+
+                if (IsVehicleResearched(uid, vehicleId))
+                {
+                    tx.Commit();
+                    return Ok(new
+                    {
+                        ok = true,
+                        vehicleId,
+                        alreadyResearched = true,
+                        spentXp = 0,
+                        predecessorVehicleId = 0,
+                        remainingPredecessorXp = 0
+                    });
+                }
+
+                var requirements = _db.VehicleResearchRequirements
+                    .Where(r => r.SuccessorVehicleId == vehicleId)
+                    .Include(r => r.Predecessor)
+                    .ToList();
+
+                if (requirements.Count == 0)
+                {
+                    EnsureResearch(uid, vehicleId);
+                    _db.SaveChanges();
+                    tx.Commit();
+                    return Ok(new
+                    {
+                        ok = true,
+                        vehicleId,
+                        spentXp = 0,
+                        predecessorVehicleId = 0,
+                        remainingPredecessorXp = 0
+                    });
+                }
+
+                VehicleResearchRequirement? selectedRequirement = SelectResearchRequirement(uid, requirements, request?.PredecessorVehicleId ?? 0);
+                if (selectedRequirement == null)
+                {
+                    tx.Rollback();
+                    return BadRequest("Required predecessor vehicle is not owned.");
+                }
+
+                var predecessor = _db.UserVehicles.FirstOrDefault(x =>
+                    x.UserId == uid && x.VehicleId == selectedRequirement.PredecessorVehicleId);
+                if (predecessor == null)
+                {
+                    tx.Rollback();
+                    return BadRequest("Required predecessor vehicle is not owned.");
+                }
+
+                int requiredXp = Math.Max(0, selectedRequirement.RequiredXpOnPredecessor);
+                if (predecessor.Xp < requiredXp)
+                {
+                    tx.Rollback();
+                    return BadRequest("Not enough XP on predecessor vehicle.");
+                }
+
+                predecessor.Xp -= requiredXp;
+                EnsureResearch(uid, vehicleId);
+                _db.SaveChanges();
+
+                tx.Commit();
+                return Ok(new
+                {
+                    ok = true,
+                    vehicleId,
+                    predecessorVehicleId = selectedRequirement.PredecessorVehicleId,
+                    spentXp = requiredXp,
+                    remainingPredecessorXp = predecessor.Xp
+                });
+            });
+        }
+
+        // ========================================
         // POST /user-vehicles/me/add-by-code/{code}
         // (dev/debug) Додає безкоштовно
         // ========================================
@@ -269,6 +395,7 @@ namespace WarOfMachines.Controllers
             };
 
             _db.UserVehicles.Add(uv);
+            EnsureResearch(uid, vehicle.Id);
             _db.SaveChanges();
 
             return Ok(new { ok = true, userVehicleId = uv.Id, vehicleId = uv.VehicleId });
@@ -352,7 +479,8 @@ namespace WarOfMachines.Controllers
                     x.VehicleId,
                     VehicleName = x.Vehicle != null ? x.Vehicle.Name : "",
                     x.Xp,
-                    x.IsActive
+                    x.IsActive,
+                    IsResearched = _db.UserVehicleResearches.Any(r => r.UserId == userId && r.VehicleId == x.VehicleId)
                 })
                 .ToList();
 
@@ -409,6 +537,88 @@ namespace WarOfMachines.Controllers
             });
         }
 
+        private bool IsVehicleResearchedForPurchase(int userId, int vehicleId)
+        {
+            if (IsVehicleResearched(userId, vehicleId))
+            {
+                return true;
+            }
+
+            bool hasResearchRequirements = _db.VehicleResearchRequirements
+                .Any(r => r.SuccessorVehicleId == vehicleId);
+
+            return !hasResearchRequirements;
+        }
+
+        private bool IsVehicleResearched(int userId, int vehicleId)
+        {
+            return _db.UserVehicleResearches
+                .Any(r => r.UserId == userId && r.VehicleId == vehicleId);
+        }
+
+        private void EnsureResearch(int userId, int vehicleId)
+        {
+            if (IsVehicleResearched(userId, vehicleId))
+            {
+                return;
+            }
+
+            _db.UserVehicleResearches.Add(new UserVehicleResearch
+            {
+                UserId = userId,
+                VehicleId = vehicleId,
+                ResearchedAt = DateTimeOffset.UtcNow
+            });
+        }
+
+        private VehicleResearchRequirement? SelectResearchRequirement(
+            int userId,
+            List<VehicleResearchRequirement> requirements,
+            int requestedPredecessorVehicleId)
+        {
+            if (requestedPredecessorVehicleId > 0)
+            {
+                return requirements.FirstOrDefault(r =>
+                    r.PredecessorVehicleId == requestedPredecessorVehicleId
+                    && _db.UserVehicles.Any(x => x.UserId == userId && x.VehicleId == r.PredecessorVehicleId));
+            }
+
+            var ownedPredecessors = _db.UserVehicles
+                .Where(x => x.UserId == userId)
+                .ToList();
+
+            VehicleResearchRequirement? bestAffordable = null;
+            VehicleResearchRequirement? bestOwned = null;
+            int bestAffordableCost = int.MaxValue;
+            int bestMissingXp = int.MaxValue;
+
+            for (int i = 0; i < requirements.Count; i++)
+            {
+                VehicleResearchRequirement requirement = requirements[i];
+                UserVehicle? owned = ownedPredecessors.FirstOrDefault(x => x.VehicleId == requirement.PredecessorVehicleId);
+                if (owned == null)
+                {
+                    continue;
+                }
+
+                int requiredXp = Math.Max(0, requirement.RequiredXpOnPredecessor);
+                if (owned.Xp >= requiredXp && requiredXp < bestAffordableCost)
+                {
+                    bestAffordableCost = requiredXp;
+                    bestAffordable = requirement;
+                }
+
+                int missingXp = Math.Max(0, requiredXp - owned.Xp);
+                if (missingXp < bestMissingXp)
+                {
+                    bestMissingXp = missingXp;
+                    bestOwned = requirement;
+                }
+            }
+
+            return bestAffordable ?? bestOwned;
+        }
+
         // ========================================
         // DTOs
         // ========================================
@@ -420,6 +630,12 @@ namespace WarOfMachines.Controllers
             public string VehicleName { get; set; } = string.Empty;
             public int Xp { get; set; }
             public bool IsActive { get; set; }
+            public bool IsResearched { get; set; }
+        }
+
+        public class ResearchVehicleRequest
+        {
+            public int PredecessorVehicleId { get; set; }
         }
 
         public class ConvertFreeXpRequest

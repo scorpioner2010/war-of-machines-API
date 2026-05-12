@@ -50,7 +50,10 @@ namespace WarOfMachines.Data
                     existing.Level = v.Level;
                     existing.PurchaseCost = v.PurchaseCost;
                     existing.HP = v.HP;
-                    existing.Damage = v.Damage;
+                    existing.ShellSpeed = v.ShellSpeed;
+                    existing.ShellsCount = v.ShellsCount;
+                    existing.DamageMin = v.DamageMin;
+                    existing.DamageMax = v.DamageMax;
                     existing.Penetration = v.Penetration;
                     existing.ReloadTime = v.ReloadTime;
                     existing.Accuracy = v.Accuracy;
@@ -106,7 +109,7 @@ namespace WarOfMachines.Data
                 Level = 1,
                 PurchaseCost = 0,
 
-                HP = 105, Damage = 10, Penetration = 84,
+                HP = 105, ShellSpeed = 84f, ShellsCount = 32, DamageMin = 40f, DamageMax = 58f, Penetration = 84,
                 ReloadTime = 2.7f, Accuracy = 0.84f, AimTime = 1.85f,
                 Speed = 6.4f, Acceleration = 3.6f, TraverseSpeed = 34f, TurretTraverseSpeed = 30f,
                 TurretArmorFront = 32, TurretArmorSide = 20, TurretArmorRear = 16,
@@ -123,7 +126,7 @@ namespace WarOfMachines.Data
                 Class = VehicleClass.Scout,
                 Level = 2,
                 PurchaseCost = 5000,
-                HP = 180, Damage = 20, Penetration = 74,
+                HP = 180, ShellSpeed = 90f, ShellsCount = 40, DamageMin = 45f, DamageMax = 65f, Penetration = 74,
                 ReloadTime = 2.35f, Accuracy = 0.87f, AimTime = 1.55f,
                 Speed = 7.2f, Acceleration = 4.0f, TraverseSpeed = 39f, TurretTraverseSpeed = 34f,
                 TurretArmorFront = 50, TurretArmorSide = 31, TurretArmorRear = 22,
@@ -140,7 +143,7 @@ namespace WarOfMachines.Data
                 Class = VehicleClass.Guardian,
                 Level = 2,
                 PurchaseCost = 9000,
-                HP = 250, Damage = 25, Penetration = 86,
+                HP = 250, ShellSpeed = 75f, ShellsCount = 30, DamageMin = 80f, DamageMax = 120f, Penetration = 86,
                 ReloadTime = 2.85f, Accuracy = 0.84f, AimTime = 1.9f,
                 Speed = 5.9f, Acceleration = 3.1f, TraverseSpeed = 33f, TurretTraverseSpeed = 29f,
                 TurretArmorFront = 76, TurretArmorSide = 50, TurretArmorRear = 34,
@@ -157,7 +160,7 @@ namespace WarOfMachines.Data
                 Class = VehicleClass.Colossus,
                 Level = 2,
                 PurchaseCost = 15000,
-                HP = 340, Damage = 36, Penetration = 96,
+                HP = 340, ShellSpeed = 55f, ShellsCount = 18, DamageMin = 140f, DamageMax = 210f, Penetration = 96,
                 ReloadTime = 3.45f, Accuracy = 0.80f, AimTime = 2.25f,
                 Speed = 4.7f, Acceleration = 2.4f, TraverseSpeed = 27f, TurretTraverseSpeed = 23f,
                 TurretArmorFront = 116, TurretArmorSide = 72, TurretArmorRear = 50,
@@ -181,7 +184,7 @@ namespace WarOfMachines.Data
                 Level = 1,
                 PurchaseCost = 0,
 
-                HP = 100, Damage = 14, Penetration = 90,
+                HP = 100, ShellSpeed = 92f, ShellsCount = 30, DamageMin = 42f, DamageMax = 60f, Penetration = 90,
                 ReloadTime = 2.8f, Accuracy = 0.86f, AimTime = 1.65f,
                 Speed = 2.7f, Acceleration = 1.5f, TraverseSpeed = 62f, TurretTraverseSpeed = 56f,
                 TurretArmorFront = 30, TurretArmorSide = 19, TurretArmorRear = 14,
@@ -198,7 +201,7 @@ namespace WarOfMachines.Data
                 Class = VehicleClass.Scout,
                 Level = 2,
                 PurchaseCost = 5000,
-                HP = 180, Damage = 29, Penetration = 88,
+                HP = 180, ShellSpeed = 100f, ShellsCount = 36, DamageMin = 50f, DamageMax = 70f, Penetration = 88,
                 ReloadTime = 2.7f, Accuracy = 0.89f, AimTime = 1.4f,
                 Speed = 3.1f, Acceleration = 1.6f, TraverseSpeed = 72f, TurretTraverseSpeed = 64f,
                 TurretArmorFront = 48, TurretArmorSide = 30, TurretArmorRear = 21,
@@ -215,7 +218,7 @@ namespace WarOfMachines.Data
                 Class = VehicleClass.Guardian,
                 Level = 2,
                 PurchaseCost = 9000,
-                HP = 250, Damage = 36, Penetration = 100,
+                HP = 250, ShellSpeed = 82f, ShellsCount = 26, DamageMin = 88f, DamageMax = 125f, Penetration = 100,
                 ReloadTime = 3.15f, Accuracy = 0.86f, AimTime = 1.75f,
                 Speed = 2.6f, Acceleration = 1.3f, TraverseSpeed = 66f, TurretTraverseSpeed = 58f,
                 TurretArmorFront = 74, TurretArmorSide = 48, TurretArmorRear = 32,
@@ -232,7 +235,7 @@ namespace WarOfMachines.Data
                 Class = VehicleClass.Colossus,
                 Level = 2,
                 PurchaseCost = 15000,
-                HP = 335, Damage = 50, Penetration = 118,
+                HP = 335, ShellSpeed = 62f, ShellsCount = 16, DamageMin = 150f, DamageMax = 220f, Penetration = 118,
                 ReloadTime = 3.9f, Accuracy = 0.82f, AimTime = 2.1f,
                 Speed = 2.1f, Acceleration = 1.1f, TraverseSpeed = 60f, TurretTraverseSpeed = 52f,
                 TurretArmorFront = 106, TurretArmorSide = 70, TurretArmorRear = 48,
@@ -271,6 +274,17 @@ namespace WarOfMachines.Data
                     Xp = 0
                 });
                 db.SaveChanges();
+
+                if (!db.UserVehicleResearches.Any(x => x.UserId == user.Id && x.VehicleId == starter.Id))
+                {
+                    db.UserVehicleResearches.Add(new UserVehicleResearch
+                    {
+                        UserId = user.Id,
+                        VehicleId = starter.Id,
+                        ResearchedAt = DateTimeOffset.UtcNow
+                    });
+                    db.SaveChanges();
+                }
             }
 
             // --- Demo Match ---
