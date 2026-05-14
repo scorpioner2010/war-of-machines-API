@@ -193,7 +193,7 @@
                 <div id="statusValue" class="value">offline</div>
             </div>
             <div class="item">
-                <div class="label">Address</div>
+                <div class="label">Current IP</div>
                 <div id="addressValue" class="value">-</div>
             </div>
             <div class="item">
@@ -201,22 +201,38 @@
                 <div id="portValue" class="value">-</div>
             </div>
             <div class="item">
-                <div class="label">Players</div>
-                <div id="playersValue" class="value">-</div>
+                <div class="label">Endpoint</div>
+                <div id="endpointValue" class="value">-</div>
             </div>
             <div class="item">
-                <div class="label">Matches</div>
+                <div class="label">Players online</div>
+                <div id="playersOnlineValue" class="value">-</div>
+            </div>
+            <div class="item">
+                <div class="label">Max players</div>
+                <div id="maxPlayersValue" class="value">-</div>
+            </div>
+            <div class="item">
+                <div class="label">Active matches</div>
                 <div id="matchesValue" class="value">-</div>
             </div>
             <div class="item">
-                <div class="label">Heartbeat</div>
+                <div class="label">Heartbeat age</div>
                 <div id="heartbeatValue" class="value">never</div>
             </div>
-            <div class="item">
-                <div class="label">Last update</div>
+            <div class="item wide">
+                <div class="label">Last heartbeat local</div>
                 <div id="lastUpdateValue" class="value">-</div>
             </div>
-            <div class="item">
+            <div class="item wide">
+                <div class="label">Last heartbeat UTC</div>
+                <div id="lastHeartbeatUtcValue" class="value">-</div>
+            </div>
+            <div class="item wide">
+                <div class="label">Last API poll</div>
+                <div id="lastPollValue" class="value">-</div>
+            </div>
+            <div class="item wide">
                 <div class="label">API polling</div>
                 <div id="pollingValue" class="value">connecting</div>
             </div>
@@ -232,10 +248,14 @@
     const statusValue = document.getElementById('statusValue');
     const addressValue = document.getElementById('addressValue');
     const portValue = document.getElementById('portValue');
-    const playersValue = document.getElementById('playersValue');
+    const endpointValue = document.getElementById('endpointValue');
+    const playersOnlineValue = document.getElementById('playersOnlineValue');
+    const maxPlayersValue = document.getElementById('maxPlayersValue');
     const matchesValue = document.getElementById('matchesValue');
     const heartbeatValue = document.getElementById('heartbeatValue');
     const lastUpdateValue = document.getElementById('lastUpdateValue');
+    const lastHeartbeatUtcValue = document.getElementById('lastHeartbeatUtcValue');
+    const lastPollValue = document.getElementById('lastPollValue');
     const pollingValue = document.getElementById('pollingValue');
     const messageValue = document.getElementById('messageValue');
 
@@ -256,6 +276,42 @@
         return date.toLocaleTimeString([], { hour:'2-digit', minute:'2-digit', second:'2-digit' }) + ' ' + date.toLocaleDateString();
     }
 
+    function formatUtcDate(value) {
+        if (!value) {
+            return '-';
+        }
+
+        const date = new Date(value);
+        if (Number.isNaN(date.getTime())) {
+            return '-';
+        }
+
+        return date.toISOString().replace('.000Z', 'Z');
+    }
+
+    function formatEndpoint(data) {
+        const address = data && data.address ? String(data.address).trim() : '';
+        const port = data && data.port !== null && data.port !== undefined ? String(data.port).trim() : '';
+
+        if (address && port) {
+            if (address.includes(':') && !address.startsWith('[')) {
+                return `[${address}]:${port}`;
+            }
+
+            return `${address}:${port}`;
+        }
+
+        if (address) {
+            return address;
+        }
+
+        if (port) {
+            return `:${port}`;
+        }
+
+        return '-';
+    }
+
     function updateStatus(data) {
         const isOnline = data && data.isOnline === true;
         onlineBadge.classList.toggle('online', isOnline);
@@ -265,18 +321,16 @@
         statusValue.textContent = valueOrDash(data.status);
         addressValue.textContent = valueOrDash(data.address);
         portValue.textContent = valueOrDash(data.port);
-
-        if (data.playersOnline !== null && data.playersOnline !== undefined && data.maxPlayers !== null && data.maxPlayers !== undefined) {
-            playersValue.textContent = `${data.playersOnline}/${data.maxPlayers}`;
-        } else {
-            playersValue.textContent = valueOrDash(data.playersOnline);
-        }
-
+        endpointValue.textContent = formatEndpoint(data);
+        playersOnlineValue.textContent = valueOrDash(data.playersOnline);
+        maxPlayersValue.textContent = valueOrDash(data.maxPlayers);
         matchesValue.textContent = valueOrDash(data.activeMatches);
         heartbeatValue.textContent = data.secondsSinceHeartbeat === null || data.secondsSinceHeartbeat === undefined
             ? 'never'
             : `${data.secondsSinceHeartbeat}s ago`;
         lastUpdateValue.textContent = formatDate(data.lastHeartbeatUtc);
+        lastHeartbeatUtcValue.textContent = formatUtcDate(data.lastHeartbeatUtc);
+        lastPollValue.textContent = formatDate(new Date().toISOString());
         messageValue.textContent = data.message || 'No status message.';
         pollingValue.textContent = 'connected';
     }
