@@ -503,3 +503,13 @@ G:\Programing\ServerProjects\war-of-machines-API\WarOfMachinesAPI\App_Data\verif
 G:\Programing\ServerProjects\war-of-machines-API\WarOfMachinesAPI\App_Data\verify-build\tr\Microsoft.CodeAnalysis.Workspaces.resources.dll
 G:\Programing\ServerProjects\war-of-machines-API\WarOfMachinesAPI\App_Data\verify-build\zh-Hans\Microsoft.CodeAnalysis.Workspaces.resources.dll
 G:\Programing\ServerProjects\war-of-machines-API\WarOfMachinesAPI\App_Data\verify-build\zh-Hant\Microsoft.CodeAnalysis.Workspaces.resources.dll
+C:\Users\Toras\AppData\Local\Temp\wom-build-check-2adc24533e3643ba834ebc5ae74f4f11\out\appsettings.Development.json
+C:\Users\Toras\AppData\Local\Temp\wom-build-check-2adc24533e3643ba834ebc5ae74f4f11\out\appsettings.json
+C:\Users\Toras\AppData\Local\Temp\wom-build-check-2adc24533e3643ba834ebc5ae74f4f11\out\appsettings.Production.json
+C:\Users\Toras\AppData\Local\Temp\wom-build-check-2adc24533e3643ba834ebc5ae74f4f11\out\WarOfMachines.staticwebassets.runtime.json
+C:\Users\Toras\AppData\Local\Temp\wom-build-check-2adc24533e3643ba834ebc5ae74f4f11\out\WarOfMachines.staticwebassets.endpoints.json
+C:\Users\Toras\AppData\Local\Temp\wom-build-check-2adc24533e3643ba834ebc5ae74f4f11\out\WarOfMachines.exe
+C:\Users\Toras\AppData\Local\Temp\wom-build-check-2adc24533e3643ba834ebc5ae74f4f11\out\WarOfMachines.deps.json
+C:\Users\Toras\AppData\Local\Temp\wom-build-check-2adc24533e3643ba834ebc5ae74f4f11\out\WarOfMachines.runtimeconfig.json
+C:\Users\Toras\AppData\Local\Temp\wom-build-check-2adc24533e3643ba834ebc5ae74f4f11\out\WarOfMachines.dll
+C:\Users\Toras\AppData\Local\Temp\wom-build-check-2adc24533e3643ba834ebc5ae74f4f11\out\WarOfMachines.pdb

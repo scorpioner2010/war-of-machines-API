@@ -193,6 +193,14 @@
                 <div id="statusValue" class="value">offline</div>
             </div>
             <div class="item">
+                <div class="label">Address</div>
+                <div id="addressValue" class="value">-</div>
+            </div>
+            <div class="item">
+                <div class="label">Port</div>
+                <div id="portValue" class="value">-</div>
+            </div>
+            <div class="item">
                 <div class="label">Players</div>
                 <div id="playersValue" class="value">-</div>
             </div>
@@ -204,11 +212,11 @@
                 <div class="label">Heartbeat</div>
                 <div id="heartbeatValue" class="value">never</div>
             </div>
-            <div class="item wide">
+            <div class="item">
                 <div class="label">Last update</div>
                 <div id="lastUpdateValue" class="value">-</div>
             </div>
-            <div class="item wide">
+            <div class="item">
                 <div class="label">API polling</div>
                 <div id="pollingValue" class="value">connecting</div>
             </div>
@@ -222,6 +230,8 @@
     const onlineBadge = document.getElementById('onlineBadge');
     const onlineText = document.getElementById('onlineText');
     const statusValue = document.getElementById('statusValue');
+    const addressValue = document.getElementById('addressValue');
+    const portValue = document.getElementById('portValue');
     const playersValue = document.getElementById('playersValue');
     const matchesValue = document.getElementById('matchesValue');
     const heartbeatValue = document.getElementById('heartbeatValue');
@@ -253,6 +263,8 @@
         onlineText.textContent = isOnline ? 'Online' : 'Offline';
 
         statusValue.textContent = valueOrDash(data.status);
+        addressValue.textContent = valueOrDash(data.address);
+        portValue.textContent = valueOrDash(data.port);
 
         if (data.playersOnline !== null && data.playersOnline !== undefined && data.maxPlayers !== null && data.maxPlayers !== undefined) {
             playersValue.textContent = `${data.playersOnline}/${data.maxPlayers}`;

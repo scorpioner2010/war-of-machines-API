@@ -38,6 +38,8 @@ namespace WarOfMachines.Infrastructure
             var snapshot = new UnityServerStatusSnapshot(
                 IsOnline: true,
                 Status: status,
+                Address: update.Address,
+                Port: update.Port,
                 LastHeartbeatUtc: now,
                 SecondsSinceHeartbeat: 0,
                 PlayersOnline: update.PlayersOnline,
@@ -57,6 +59,8 @@ namespace WarOfMachines.Infrastructure
     public sealed record UnityServerStatusUpdate
     {
         public string? Status { get; init; }
+        public string? Address { get; init; }
+        public int? Port { get; init; }
         public int? PlayersOnline { get; init; }
         public int? MaxPlayers { get; init; }
         public int? ActiveMatches { get; init; }
@@ -66,6 +70,8 @@ namespace WarOfMachines.Infrastructure
     public sealed record UnityServerStatusSnapshot(
         bool IsOnline,
         string Status,
+        string? Address,
+        int? Port,
         DateTimeOffset? LastHeartbeatUtc,
         int? SecondsSinceHeartbeat,
         int? PlayersOnline,
@@ -78,6 +84,8 @@ namespace WarOfMachines.Infrastructure
             return new UnityServerStatusSnapshot(
                 IsOnline: false,
                 Status: "offline",
+                Address: null,
+                Port: null,
                 LastHeartbeatUtc: lastHeartbeatUtc,
                 SecondsSinceHeartbeat: null,
                 PlayersOnline: null,
