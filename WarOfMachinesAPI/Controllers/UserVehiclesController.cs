@@ -49,6 +49,8 @@ namespace WarOfMachines.Controllers
                     VehicleId = x.VehicleId,
                     VehicleCode = x.Vehicle != null ? x.Vehicle.Code : string.Empty,
                     VehicleName = x.Vehicle != null ? x.Vehicle.Name : string.Empty,
+                    ShellSpeed = x.Vehicle != null ? x.Vehicle.ShellSpeed : 0f,
+                    TurretTraverseSpeed = x.Vehicle != null ? x.Vehicle.TurretTraverseSpeed : 0f,
                     Xp = x.Xp,
                     IsActive = x.IsActive,
                     IsResearched = researchedIds.Contains(x.VehicleId)
@@ -478,6 +480,8 @@ namespace WarOfMachines.Controllers
                 {
                     x.VehicleId,
                     VehicleName = x.Vehicle != null ? x.Vehicle.Name : "",
+                    ShellSpeed = x.Vehicle != null ? x.Vehicle.ShellSpeed : 0f,
+                    TurretTraverseSpeed = x.Vehicle != null ? x.Vehicle.TurretTraverseSpeed : 0f,
                     x.Xp,
                     x.IsActive,
                     IsResearched = _db.UserVehicleResearches.Any(r => r.UserId == userId && r.VehicleId == x.VehicleId)
@@ -628,6 +632,8 @@ namespace WarOfMachines.Controllers
             public int VehicleId { get; set; }
             public string VehicleCode { get; set; } = string.Empty;
             public string VehicleName { get; set; } = string.Empty;
+            public float ShellSpeed { get; set; }
+            public float TurretTraverseSpeed { get; set; }
             public int Xp { get; set; }
             public bool IsActive { get; set; }
             public bool IsResearched { get; set; }

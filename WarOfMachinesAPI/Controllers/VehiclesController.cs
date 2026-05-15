@@ -251,6 +251,7 @@ namespace WarOfMachines.Controllers
                     branch = v.Branch,
                     factionCode = v.Faction != null ? v.Faction.Code : string.Empty,
                     shellSpeed = v.ShellSpeed,
+                    turretTraverseSpeed = v.TurretTraverseSpeed,
                     shellsCount = v.ShellsCount,
                     damageMin = v.DamageMin,
                     damageMax = v.DamageMax,
