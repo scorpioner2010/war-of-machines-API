@@ -39,6 +39,7 @@ namespace WarOfMachines.Models
         public float DamageMin { get; set; } = 90f;
         public float DamageMax { get; set; } = 110f;
         public int Penetration { get; set; } = 0;
+        public float ViewRange { get; set; } = 100f;
 
         public float ReloadTime { get; set; } = 0f;
         public float Accuracy { get; set; } = 0f;

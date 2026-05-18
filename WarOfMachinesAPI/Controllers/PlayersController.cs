@@ -65,6 +65,7 @@ namespace WarOfMachines.Controllers
                 ActiveVehicleName = active?.Vehicle?.Name ?? string.Empty,
                 ActiveVehicleShellSpeed = active?.Vehicle?.ShellSpeed ?? 0f,
                 ActiveVehicleTurretTraverseSpeed = active?.Vehicle?.TurretTraverseSpeed ?? 0f,
+                ActiveVehicleViewRange = active?.Vehicle?.ViewRange ?? 0f,
 
                 OwnedVehicles = owned.Select(v => new OwnedVehicleDto
                 {
@@ -73,6 +74,7 @@ namespace WarOfMachines.Controllers
                     Name = v.Vehicle?.Name ?? string.Empty,
                     ShellSpeed = v.Vehicle?.ShellSpeed ?? 0f,
                     TurretTraverseSpeed = v.Vehicle?.TurretTraverseSpeed ?? 0f,
+                    ViewRange = v.Vehicle?.ViewRange ?? 0f,
                     IsActive = v.IsActive,
                     Xp = v.Xp,
                     IsResearched = researchedIds.Contains(v.VehicleId)
@@ -144,6 +146,7 @@ namespace WarOfMachines.Controllers
         public string ActiveVehicleName { get; set; } = "";
         public float ActiveVehicleShellSpeed { get; set; }
         public float ActiveVehicleTurretTraverseSpeed { get; set; }
+        public float ActiveVehicleViewRange { get; set; }
 
         public List<OwnedVehicleDto> OwnedVehicles { get; set; } = new();
         public List<ResearchedVehicleDto> ResearchedVehicles { get; set; } = new();
@@ -156,6 +159,7 @@ namespace WarOfMachines.Controllers
         public string Name { get; set; } = "";
         public float ShellSpeed { get; set; }
         public float TurretTraverseSpeed { get; set; }
+        public float ViewRange { get; set; }
         public bool IsActive { get; set; }
         public int Xp { get; set; }
         public bool IsResearched { get; set; }

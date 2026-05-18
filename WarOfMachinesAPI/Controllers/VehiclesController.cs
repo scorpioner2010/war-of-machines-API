@@ -55,6 +55,7 @@ namespace WarOfMachines.Controllers
                     DamageMin = v.DamageMin,
                     DamageMax = v.DamageMax,
                     Penetration = v.Penetration,
+                    ViewRange = v.ViewRange,
                     ReloadTime = v.ReloadTime,
                     Accuracy = v.Accuracy,
                     AimTime = v.AimTime,
@@ -100,6 +101,7 @@ namespace WarOfMachines.Controllers
                 DamageMin = v.DamageMin,
                 DamageMax = v.DamageMax,
                 Penetration = v.Penetration,
+                ViewRange = v.ViewRange,
                 ReloadTime = v.ReloadTime,
                 Accuracy = v.Accuracy,
                 AimTime = v.AimTime,
@@ -142,6 +144,7 @@ namespace WarOfMachines.Controllers
                 DamageMin = v.DamageMin,
                 DamageMax = v.DamageMax,
                 Penetration = v.Penetration,
+                ViewRange = v.ViewRange,
                 ReloadTime = v.ReloadTime,
                 Accuracy = v.Accuracy,
                 AimTime = v.AimTime,
@@ -255,6 +258,7 @@ namespace WarOfMachines.Controllers
                     shellsCount = v.ShellsCount,
                     damageMin = v.DamageMin,
                     damageMax = v.DamageMax,
+                    viewRange = v.ViewRange,
                     isVisible = v.IsVisible // 🔹 додано
                 })
                 .ToList();
@@ -297,6 +301,7 @@ namespace WarOfMachines.Controllers
         public float DamageMin { get; set; }
         public float DamageMax { get; set; }
         public int Penetration { get; set; }
+        public float ViewRange { get; set; }
 
         public float ReloadTime { get; set; }
         public float Accuracy { get; set; }
