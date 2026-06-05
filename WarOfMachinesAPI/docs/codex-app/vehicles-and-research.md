@@ -3,6 +3,8 @@
 ## Current Behavior
 The vehicle catalog is public and stores vehicles by unique code with faction, branch, class, level, purchase cost, combat stats, armor strings, and visibility. Research links model predecessor-to-successor unlocks with XP cost on the predecessor. Authenticated users can research vehicles, buy researched vehicles with Bolts, sell vehicles for half purchase cost, debug-add vehicles for free, remove vehicles, set active vehicles, and convert Free XP to owned vehicle XP.
 
+Seeded vehicle combat stats are owned by `Data/SeedData.cs` and are written idempotently on startup. Current seeded `Accuracy` values are balanced from `0.8` to `2.0`, where lower values are more accurate. Current seeded `Penetration` values are balanced from `90` to `135`.
+
 ## Owner Files
 - `Controllers/VehiclesController.cs` - public vehicle catalog, details, tech tree link management, and graph endpoints.
 - `Controllers/UserVehiclesController.cs` - authenticated ownership, purchase, sell, research, debug add, remove, active vehicle, and XP conversion endpoints.

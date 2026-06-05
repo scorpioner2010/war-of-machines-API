@@ -3,6 +3,8 @@
 ## Current Behavior
 The app uses EF Core 8 with PostgreSQL through Npgsql. `Program.cs` resolves the connection string, registers `AppDbContext`, auto-applies migrations at startup, and runs idempotent seed data. `AppDbContextFactory` mirrors connection resolution for design-time migrations. Entities cover players, vehicles, factions, research links, owned vehicles, researched unlocks, matches, match participants, and maps.
 
+`SeedData.Initialize` updates existing vehicles by `Code`, so seeded vehicle balance changes are applied on startup without a schema migration. Current seeded vehicle accuracy spans `0.8` to `2.0`, and penetration spans `90` to `135`.
+
 ## Owner Files
 - `Data/AppDbContext.cs` - DbSets, relationships, indexes, check constraints, delete behavior.
 - `Data/AppDbContextFactory.cs` - design-time DbContext creation for migrations.
