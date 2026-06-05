@@ -110,11 +110,11 @@ namespace WarOfMachines.Data
                 Level = 1,
                 PurchaseCost = 0,
 
-                HP = 105, ShellSpeed = 110f, ShellsCount = 87, DamageMin = 44f, DamageMax = 66f, Penetration = 88, ViewRange = 105f,
-                ReloadTime = 2.2f, Accuracy = 2.45f, AimTime = 1.75f,
-                Speed = 6.4f, Acceleration = 3.6f, TraverseSpeed = 34f, TurretTraverseSpeed = 26f,
+                HP = 105, ShellSpeed = 247.5f, ShellsCount = 87, DamageMin = 52.8f, DamageMax = 79.2f, Penetration = 88, ViewRange = 105f,
+                ReloadTime = 2.2f, Accuracy = 1.4f, AimTime = 1.75f,
+                Speed = 7.68f, Acceleration = 3.6f, TraverseSpeed = 34f, TurretTraverseSpeed = 26f,
                 TurretArmorFront = 32, TurretArmorSide = 20, TurretArmorRear = 16,
-                HullArmorFront = 38, HullArmorSide = 24, HullArmorRear = 18,
+                HullArmorFront = 30, HullArmorSide = 19, HullArmorRear = 14,
                 IsVisible = true
             });
 
@@ -127,11 +127,11 @@ namespace WarOfMachines.Data
                 Class = VehicleClass.Scout,
                 Level = 2,
                 PurchaseCost = 5000,
-                HP = 180, ShellSpeed = 140f, ShellsCount = 149, DamageMin = 30f, DamageMax = 45f, Penetration = 72, ViewRange = 125f,
-                ReloadTime = 1.25f, Accuracy = 1.45f, AimTime = 1.15f,
-                Speed = 7.2f, Acceleration = 4.0f, TraverseSpeed = 39f, TurretTraverseSpeed = 32f,
+                HP = 180, ShellSpeed = 315f, ShellsCount = 149, DamageMin = 36f, DamageMax = 54f, Penetration = 72, ViewRange = 125f,
+                ReloadTime = 1.25f, Accuracy = 0.95f, AimTime = 1.15f,
+                Speed = 8.64f, Acceleration = 4.0f, TraverseSpeed = 39f, TurretTraverseSpeed = 32f,
                 TurretArmorFront = 50, TurretArmorSide = 31, TurretArmorRear = 22,
-                HullArmorFront = 58, HullArmorSide = 35, HullArmorRear = 25,
+                HullArmorFront = 46, HullArmorSide = 28, HullArmorRear = 20,
                 IsVisible = true
             });
 
@@ -144,11 +144,11 @@ namespace WarOfMachines.Data
                 Class = VehicleClass.Guardian,
                 Level = 2,
                 PurchaseCost = 9000,
-                HP = 250, ShellSpeed = 85f, ShellsCount = 65, DamageMin = 72f, DamageMax = 108f, Penetration = 115, ViewRange = 100f,
-                ReloadTime = 3.0f, Accuracy = 3.35f, AimTime = 2.35f,
-                Speed = 5.9f, Acceleration = 3.1f, TraverseSpeed = 33f, TurretTraverseSpeed = 25f,
+                HP = 250, ShellSpeed = 191.25f, ShellsCount = 65, DamageMin = 86.4f, DamageMax = 129.6f, Penetration = 115, ViewRange = 100f,
+                ReloadTime = 3.0f, Accuracy = 1.9f, AimTime = 2.35f,
+                Speed = 7.08f, Acceleration = 3.1f, TraverseSpeed = 33f, TurretTraverseSpeed = 25f,
                 TurretArmorFront = 76, TurretArmorSide = 50, TurretArmorRear = 34,
-                HullArmorFront = 84, HullArmorSide = 60, HullArmorRear = 40,
+                HullArmorFront = 67, HullArmorSide = 48, HullArmorRear = 32,
                 IsVisible = true
             });
 
@@ -161,11 +161,11 @@ namespace WarOfMachines.Data
                 Class = VehicleClass.Colossus,
                 Level = 2,
                 PurchaseCost = 15000,
-                HP = 340, ShellSpeed = 50f, ShellsCount = 50, DamageMin = 96f, DamageMax = 144f, Penetration = 150, ViewRange = 85f,
-                ReloadTime = 4.0f, Accuracy = 5.80f, AimTime = 3.3f,
-                Speed = 4.7f, Acceleration = 2.4f, TraverseSpeed = 27f, TurretTraverseSpeed = 15f,
+                HP = 340, ShellSpeed = 112.5f, ShellsCount = 50, DamageMin = 115.2f, DamageMax = 172.8f, Penetration = 150, ViewRange = 85f,
+                ReloadTime = 4.0f, Accuracy = 3.0f, AimTime = 3.3f,
+                Speed = 5.64f, Acceleration = 2.4f, TraverseSpeed = 27f, TurretTraverseSpeed = 15f,
                 TurretArmorFront = 116, TurretArmorSide = 72, TurretArmorRear = 50,
-                HullArmorFront = 128, HullArmorSide = 82, HullArmorRear = 58,
+                HullArmorFront = 102, HullArmorSide = 66, HullArmorRear = 46,
                 IsVisible = true
             });
 
@@ -185,11 +185,11 @@ namespace WarOfMachines.Data
                 Level = 1,
                 PurchaseCost = 0,
 
-                HP = 100, ShellSpeed = 125f, ShellsCount = 118, DamageMin = 32f, DamageMax = 48f, Penetration = 92, ViewRange = 110f,
-                ReloadTime = 1.6f, Accuracy = 1.95f, AimTime = 1.45f,
-                Speed = 2.7f, Acceleration = 1.5f, TraverseSpeed = 62f, TurretTraverseSpeed = 67f,
+                HP = 100, ShellSpeed = 281.25f, ShellsCount = 118, DamageMin = 38.4f, DamageMax = 57.6f, Penetration = 92, ViewRange = 110f,
+                ReloadTime = 1.6f, Accuracy = 1.2f, AimTime = 1.45f,
+                Speed = 3.24f, Acceleration = 1.5f, TraverseSpeed = 62f, TurretTraverseSpeed = 67f,
                 TurretArmorFront = 30, TurretArmorSide = 19, TurretArmorRear = 14,
-                HullArmorFront = 36, HullArmorSide = 23, HullArmorRear = 16,
+                HullArmorFront = 29, HullArmorSide = 18, HullArmorRear = 13,
                 IsVisible = true
             });
 
@@ -202,11 +202,11 @@ namespace WarOfMachines.Data
                 Class = VehicleClass.Scout,
                 Level = 2,
                 PurchaseCost = 5000,
-                HP = 180, ShellSpeed = 150f, ShellsCount = 185, DamageMin = 24f, DamageMax = 36f, Penetration = 82, ViewRange = 130f,
-                ReloadTime = 1.0f, Accuracy = 1.15f, AimTime = 0.95f,
-                Speed = 3.1f, Acceleration = 1.6f, TraverseSpeed = 72f, TurretTraverseSpeed = 80f,
+                HP = 180, ShellSpeed = 337.5f, ShellsCount = 185, DamageMin = 28.8f, DamageMax = 43.2f, Penetration = 82, ViewRange = 130f,
+                ReloadTime = 1.0f, Accuracy = 0.8f, AimTime = 0.95f,
+                Speed = 3.72f, Acceleration = 1.6f, TraverseSpeed = 72f, TurretTraverseSpeed = 80f,
                 TurretArmorFront = 48, TurretArmorSide = 30, TurretArmorRear = 21,
-                HullArmorFront = 54, HullArmorSide = 34, HullArmorRear = 24,
+                HullArmorFront = 43, HullArmorSide = 27, HullArmorRear = 19,
                 IsVisible = true
             });
 
@@ -219,11 +219,11 @@ namespace WarOfMachines.Data
                 Class = VehicleClass.Guardian,
                 Level = 2,
                 PurchaseCost = 9000,
-                HP = 250, ShellSpeed = 100f, ShellsCount = 75, DamageMin = 62f, DamageMax = 94f, Penetration = 122, ViewRange = 105f,
-                ReloadTime = 2.6f, Accuracy = 2.95f, AimTime = 2.05f,
-                Speed = 2.6f, Acceleration = 1.3f, TraverseSpeed = 66f, TurretTraverseSpeed = 71f,
+                HP = 250, ShellSpeed = 225f, ShellsCount = 75, DamageMin = 74.4f, DamageMax = 112.8f, Penetration = 122, ViewRange = 105f,
+                ReloadTime = 2.6f, Accuracy = 1.65f, AimTime = 2.05f,
+                Speed = 3.12f, Acceleration = 1.3f, TraverseSpeed = 66f, TurretTraverseSpeed = 71f,
                 TurretArmorFront = 74, TurretArmorSide = 48, TurretArmorRear = 32,
-                HullArmorFront = 84, HullArmorSide = 56, HullArmorRear = 38,
+                HullArmorFront = 67, HullArmorSide = 45, HullArmorRear = 30,
                 IsVisible = true
             });
 
@@ -236,11 +236,11 @@ namespace WarOfMachines.Data
                 Class = VehicleClass.Colossus,
                 Level = 2,
                 PurchaseCost = 15000,
-                HP = 335, ShellSpeed = 65f, ShellsCount = 57, DamageMin = 84f, DamageMax = 126f, Penetration = 145, ViewRange = 90f,
-                ReloadTime = 3.5f, Accuracy = 5.00f, AimTime = 2.9f,
-                Speed = 2.1f, Acceleration = 1.1f, TraverseSpeed = 60f, TurretTraverseSpeed = 61f,
+                HP = 335, ShellSpeed = 146.25f, ShellsCount = 57, DamageMin = 100.8f, DamageMax = 151.2f, Penetration = 145, ViewRange = 90f,
+                ReloadTime = 3.5f, Accuracy = 2.65f, AimTime = 2.9f,
+                Speed = 2.52f, Acceleration = 1.1f, TraverseSpeed = 60f, TurretTraverseSpeed = 61f,
                 TurretArmorFront = 106, TurretArmorSide = 70, TurretArmorRear = 48,
-                HullArmorFront = 118, HullArmorSide = 80, HullArmorRear = 56,
+                HullArmorFront = 94, HullArmorSide = 64, HullArmorRear = 45,
                 IsVisible = true
             });
 
