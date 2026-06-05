@@ -12,9 +12,10 @@ Future Codex sessions must read `AGENTS.md` first, then this index, then every r
 - `maps-and-leaderboards.md` - Map listing and leaderboard endpoints for MMR, free XP, and vehicle XP.
 - `database-ef-core.md` - `AppDbContext`, EF Core entities, relationships, indexes, migrations, PostgreSQL setup, and seed data.
 - `configuration-settings.md` - `appsettings`, `.env.local`, connection string resolution, JWT key config, launch profiles, logging levels, and CORS policy.
-- `admin-minimal-apis.md` - Static admin pages, `/admin` minimal endpoints, log viewer routes, and root redirect.
+- `minimal-apis.md` - Static admin pages, `/admin` minimal endpoints, log viewer routes, and root redirect.
 - `logging-observability.md` - In-memory log store, admin log stream/snapshot/clear behavior, startup log events, and missing diagnostics.
 - `unity-server-status.md` - Unity server heartbeat/status endpoints and singleton in-memory status store.
+- `validation-and-error-handling.md` - Manual validation, `[ApiController]` behavior, route-specific error responses, and current exception handling gaps.
 - `deployment-hosting.md` - Local/production hosting files, startup migration implications, static file serving, Swagger exposure, and solution/project layout.
 
 ## Systems Not Present

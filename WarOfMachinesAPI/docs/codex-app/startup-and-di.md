@@ -25,7 +25,7 @@
 
 ## Routes / Contracts
 - Controllers are mapped by attributes via `app.MapControllers()`.
-- Minimal routes are documented in `admin-minimal-apis.md`.
+- Minimal routes are documented in `minimal-apis.md`.
 
 ## Tests
 - No automated tests were found.
