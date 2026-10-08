@@ -1,0 +1,21 @@
+name: war-of-machines-local
+
+services:
+  postgres:
+    image: postgres:16-alpine
+    environment:
+      POSTGRES_DB: war_of_machines_local
+      POSTGRES_USER: wom_local
+      POSTGRES_PASSWORD: wom_local_dev_password
+    ports:
+      - "127.0.0.1:5433:5432"
+    volumes:
+      - war_of_machines_postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U wom_local -d war_of_machines_local"]
+      interval: 5s
+      timeout: 5s
+      retries: 12
+
+volumes:
+  war_of_machines_postgres_data:

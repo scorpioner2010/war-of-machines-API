@@ -498,3 +498,4 @@ C:\Users\Toras2026\AppData\Local\Temp\warofmachines-codex-build\WarOfMachines.de
 C:\Users\Toras2026\AppData\Local\Temp\warofmachines-codex-build\WarOfMachines.runtimeconfig.json
 C:\Users\Toras2026\AppData\Local\Temp\warofmachines-codex-build\WarOfMachines.dll
 C:\Users\Toras2026\AppData\Local\Temp\warofmachines-codex-build\WarOfMachines.pdb
+D:\Programing\ServerProjects\war-of-machines-API\WarOfMachinesAPI\obj\Debug\net8.0\swae.build.ex.cache

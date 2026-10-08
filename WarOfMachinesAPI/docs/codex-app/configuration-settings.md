@@ -12,6 +12,9 @@ Configuration comes from standard ASP.NET Core providers plus `.env.local`, whic
 - `appsettings.Production.json` - production logging levels and `AllowedHosts`.
 - `.env.local.example` - local environment template.
 - `Properties/launchSettings.json` - local HTTP/HTTPS/IIS Express launch URLs and development environment.
+- `docker-compose.local.yml` - opt-in PostgreSQL 16 local-development container, bound only to `127.0.0.1:5433` with a persistent Docker volume.
+- `tools/Start-LocalPostgresApi.ps1` - starts the local database and API with a process-scoped local connection string.
+- `tools/Stop-LocalPostgres.ps1` - stops the local database while retaining its data volume.
 
 ## Important Configuration
 - `DATABASE_URL` - PostgreSQL URL or keyword connection string; URL values can include `sslmode`.
@@ -22,10 +25,14 @@ Configuration comes from standard ASP.NET Core providers plus `.env.local`, whic
 - `Logging:LogLevel:Microsoft.EntityFrameworkCore` - production EF Core log level.
 - `AllowedHosts` - currently `*`.
 - Launch URLs: `http://localhost:5220`, `https://localhost:7216`, IIS Express `http://localhost:43606` with SSL port `44377`.
+- Rider/Visual Studio profile `local-postgres` runs Kestrel on ports `7216`/`5220` with the Docker local database. Select it instead of `IIS Express`, which uses `.env.local` and may target the remote database.
+- Docker local database: `Host=127.0.0.1;Port=5433;Database=war_of_machines_local;Username=wom_local;Password=wom_local_dev_password`.
 
 ## Dependencies
 - Npgsql connection string builder handles PostgreSQL URL conversion.
-- `LocalEnvFileLoader` does not override existing environment variables with blank values.
+- `LocalEnvFileLoader` treats pre-existing process environment variables as higher priority than `.env.local`; the env file supplies only missing values.
+- `Start-LocalPostgresApi.ps1` sets `DATABASE_URL` only for its own API process, so stopping it and running `dotnet run --launch-profile https` restores the existing `.env.local` database target without editing that file.
+- The local scripts use `docker` from `PATH`, or the per-user Docker Desktop CLI path under `%LOCALAPPDATA%\Programs\DockerDesktop\resources\bin` when Docker was installed for the current user; in the latter case they add that directory to the process `PATH` so Docker's credential helper can run.
 - JWT auth depends on `Jwt:Key` at startup and in `AuthController`.
 - CORS policy `any` is used before static files and auth.
 

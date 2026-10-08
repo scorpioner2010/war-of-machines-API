@@ -29,6 +29,18 @@
         "ASPNETCORE_ENVIRONMENT": "Development"
       }
     },
+    "local-postgres": {
+      "commandName": "Project",
+      "dotnetRunMessages": true,
+      "launchBrowser": true,
+      "launchUrl": "admin",
+      "applicationUrl": "https://localhost:7216;http://localhost:5220",
+      "environmentVariables": {
+        "ASPNETCORE_ENVIRONMENT": "Development",
+        "DATABASE_URL": "Host=127.0.0.1;Port=5433;Database=war_of_machines_local;Username=wom_local;Password=wom_local_dev_password",
+        "ConnectionStrings__DefaultConnection": ""
+      }
+    },
     "IIS Express": {
       "commandName": "IISExpress",
       "launchBrowser": true,

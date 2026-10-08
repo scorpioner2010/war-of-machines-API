@@ -37,10 +37,12 @@ namespace WarOfMachines.Infrastructure
                     value = value[1..^1];
                 }
 
-                if (!string.IsNullOrWhiteSpace(value) || Environment.GetEnvironmentVariable(name) is null)
+                if (Environment.GetEnvironmentVariable(name) is not null)
                 {
-                    Environment.SetEnvironmentVariable(name, value);
+                    continue;
                 }
+
+                Environment.SetEnvironmentVariable(name, value);
             }
         }
     }

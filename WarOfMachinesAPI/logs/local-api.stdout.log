@@ -1,0 +1,160 @@
+Using launch settings from D:\Programing\ServerProjects\war-of-machines-API\WarOfMachinesAPI\Properties\launchSettings.json...
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (21ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c
+    JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND
+          c.relname='__EFMigrationsHistory'
+)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "MigrationId", "ProductVersion"
+      FROM "__EFMigrationsHistory"
+      ORDER BY "MigrationId";
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c
+    JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND
+          c.relname='__EFMigrationsHistory'
+)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+    SELECT 1 FROM pg_catalog.pg_class c
+    JOIN pg_catalog.pg_namespace n ON n.oid=c.relnamespace
+    WHERE n.nspname='public' AND
+          c.relname='__EFMigrationsHistory'
+)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT "MigrationId", "ProductVersion"
+      FROM "__EFMigrationsHistory"
+      ORDER BY "MigrationId";
+info: Microsoft.EntityFrameworkCore.Migrations[20405]
+      No migrations were applied. The database is already up to date.
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (2ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT f."Id", f."Code", f."Description", f."Name"
+      FROM "Factions" AS f
+      WHERE f."Code" = 'iron_alliance'
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT f."Id", f."Code", f."Description", f."Name"
+      FROM "Factions" AS f
+      WHERE f."Code" = 'nova_syndicate'
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Maps" AS m)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (4ms) [Parameters=[@__v_Code_0='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v."Id", v."Acceleration", v."Accuracy", v."AimTime", v."Branch", v."Class", v."Code", v."DamageMax", v."DamageMin", v."FactionId", v."HP", v."HullArmorFront", v."HullArmorRear", v."HullArmorSide", v."IsVisible", v."Level", v."Name", v."Penetration", v."PurchaseCost", v."ReloadTime", v."ShellSpeed", v."ShellsCount", v."Speed", v."TraverseSpeed", v."TurretArmorFront", v."TurretArmorRear", v."TurretArmorSide", v."TurretTraverseSpeed", v."ViewRange"
+      FROM "Vehicles" AS v
+      WHERE v."Code" = @__v_Code_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__v_Code_0='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v."Id", v."Acceleration", v."Accuracy", v."AimTime", v."Branch", v."Class", v."Code", v."DamageMax", v."DamageMin", v."FactionId", v."HP", v."HullArmorFront", v."HullArmorRear", v."HullArmorSide", v."IsVisible", v."Level", v."Name", v."Penetration", v."PurchaseCost", v."ReloadTime", v."ShellSpeed", v."ShellsCount", v."Speed", v."TraverseSpeed", v."TurretArmorFront", v."TurretArmorRear", v."TurretArmorSide", v."TurretTraverseSpeed", v."ViewRange"
+      FROM "Vehicles" AS v
+      WHERE v."Code" = @__v_Code_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__v_Code_0='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v."Id", v."Acceleration", v."Accuracy", v."AimTime", v."Branch", v."Class", v."Code", v."DamageMax", v."DamageMin", v."FactionId", v."HP", v."HullArmorFront", v."HullArmorRear", v."HullArmorSide", v."IsVisible", v."Level", v."Name", v."Penetration", v."PurchaseCost", v."ReloadTime", v."ShellSpeed", v."ShellsCount", v."Speed", v."TraverseSpeed", v."TurretArmorFront", v."TurretArmorRear", v."TurretArmorSide", v."TurretTraverseSpeed", v."ViewRange"
+      FROM "Vehicles" AS v
+      WHERE v."Code" = @__v_Code_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__v_Code_0='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v."Id", v."Acceleration", v."Accuracy", v."AimTime", v."Branch", v."Class", v."Code", v."DamageMax", v."DamageMin", v."FactionId", v."HP", v."HullArmorFront", v."HullArmorRear", v."HullArmorSide", v."IsVisible", v."Level", v."Name", v."Penetration", v."PurchaseCost", v."ReloadTime", v."ShellSpeed", v."ShellsCount", v."Speed", v."TraverseSpeed", v."TurretArmorFront", v."TurretArmorRear", v."TurretArmorSide", v."TurretTraverseSpeed", v."ViewRange"
+      FROM "Vehicles" AS v
+      WHERE v."Code" = @__v_Code_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__predecessorId_0='?' (DbType = Int32), @__successorId_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "VehicleResearchRequirements" AS v
+          WHERE v."PredecessorVehicleId" = @__predecessorId_0 AND v."SuccessorVehicleId" = @__successorId_1)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__predecessorId_0='?' (DbType = Int32), @__successorId_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "VehicleResearchRequirements" AS v
+          WHERE v."PredecessorVehicleId" = @__predecessorId_0 AND v."SuccessorVehicleId" = @__successorId_1)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__predecessorId_0='?' (DbType = Int32), @__successorId_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "VehicleResearchRequirements" AS v
+          WHERE v."PredecessorVehicleId" = @__predecessorId_0 AND v."SuccessorVehicleId" = @__successorId_1)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__v_Code_0='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v."Id", v."Acceleration", v."Accuracy", v."AimTime", v."Branch", v."Class", v."Code", v."DamageMax", v."DamageMin", v."FactionId", v."HP", v."HullArmorFront", v."HullArmorRear", v."HullArmorSide", v."IsVisible", v."Level", v."Name", v."Penetration", v."PurchaseCost", v."ReloadTime", v."ShellSpeed", v."ShellsCount", v."Speed", v."TraverseSpeed", v."TurretArmorFront", v."TurretArmorRear", v."TurretArmorSide", v."TurretTraverseSpeed", v."ViewRange"
+      FROM "Vehicles" AS v
+      WHERE v."Code" = @__v_Code_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__v_Code_0='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v."Id", v."Acceleration", v."Accuracy", v."AimTime", v."Branch", v."Class", v."Code", v."DamageMax", v."DamageMin", v."FactionId", v."HP", v."HullArmorFront", v."HullArmorRear", v."HullArmorSide", v."IsVisible", v."Level", v."Name", v."Penetration", v."PurchaseCost", v."ReloadTime", v."ShellSpeed", v."ShellsCount", v."Speed", v."TraverseSpeed", v."TurretArmorFront", v."TurretArmorRear", v."TurretArmorSide", v."TurretTraverseSpeed", v."ViewRange"
+      FROM "Vehicles" AS v
+      WHERE v."Code" = @__v_Code_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__v_Code_0='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v."Id", v."Acceleration", v."Accuracy", v."AimTime", v."Branch", v."Class", v."Code", v."DamageMax", v."DamageMin", v."FactionId", v."HP", v."HullArmorFront", v."HullArmorRear", v."HullArmorSide", v."IsVisible", v."Level", v."Name", v."Penetration", v."PurchaseCost", v."ReloadTime", v."ShellSpeed", v."ShellsCount", v."Speed", v."TraverseSpeed", v."TurretArmorFront", v."TurretArmorRear", v."TurretArmorSide", v."TurretTraverseSpeed", v."ViewRange"
+      FROM "Vehicles" AS v
+      WHERE v."Code" = @__v_Code_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__v_Code_0='?'], CommandType='Text', CommandTimeout='30']
+      SELECT v."Id", v."Acceleration", v."Accuracy", v."AimTime", v."Branch", v."Class", v."Code", v."DamageMax", v."DamageMin", v."FactionId", v."HP", v."HullArmorFront", v."HullArmorRear", v."HullArmorSide", v."IsVisible", v."Level", v."Name", v."Penetration", v."PurchaseCost", v."ReloadTime", v."ShellSpeed", v."ShellsCount", v."Speed", v."TraverseSpeed", v."TurretArmorFront", v."TurretArmorRear", v."TurretArmorSide", v."TurretTraverseSpeed", v."ViewRange"
+      FROM "Vehicles" AS v
+      WHERE v."Code" = @__v_Code_0
+      LIMIT 1
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__predecessorId_0='?' (DbType = Int32), @__successorId_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "VehicleResearchRequirements" AS v
+          WHERE v."PredecessorVehicleId" = @__predecessorId_0 AND v."SuccessorVehicleId" = @__successorId_1)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__predecessorId_0='?' (DbType = Int32), @__successorId_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "VehicleResearchRequirements" AS v
+          WHERE v."PredecessorVehicleId" = @__predecessorId_0 AND v."SuccessorVehicleId" = @__successorId_1)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[@__predecessorId_0='?' (DbType = Int32), @__successorId_1='?' (DbType = Int32)], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "VehicleResearchRequirements" AS v
+          WHERE v."PredecessorVehicleId" = @__predecessorId_0 AND v."SuccessorVehicleId" = @__successorId_1)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Players" AS p)
+info: Microsoft.EntityFrameworkCore.Database.Command[20101]
+      Executed DbCommand (1ms) [Parameters=[], CommandType='Text', CommandTimeout='30']
+      SELECT EXISTS (
+          SELECT 1
+          FROM "Matches" AS m)
+warn: Microsoft.AspNetCore.Server.Kestrel.Core.KestrelServer[8]
+      The ASP.NET Core developer certificate is not trusted. For information about trusting the ASP.NET Core developer certificate, see https://aka.ms/aspnet/https-trust-dev-cert.
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: https://localhost:7216
+info: Microsoft.Hosting.Lifetime[14]
+      Now listening on: http://localhost:5220
+info: Microsoft.Hosting.Lifetime[0]
+      Application started. Press Ctrl+C to shut down.
+info: Microsoft.Hosting.Lifetime[0]
+      Hosting environment: Development
+info: Microsoft.Hosting.Lifetime[0]
+      Content root path: D:\Programing\ServerProjects\war-of-machines-API\WarOfMachinesAPI
