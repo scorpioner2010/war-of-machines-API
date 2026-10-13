@@ -47,6 +47,7 @@ namespace WarOfMachines.Models
 
         public float Speed { get; set; } = 0f;
         public float Acceleration { get; set; } = 0f;
+        public float TraverseAcceleration { get; set; } = 0f;
         public float TraverseSpeed { get; set; } = 0f;
         public float TurretTraverseSpeed { get; set; } = 0f;
 

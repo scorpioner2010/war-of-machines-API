@@ -8,6 +8,7 @@ Future Codex sessions must read `AGENTS.md` first, then this index, then every r
 - `authentication-authorization.md` - Register/login behavior, JWT issuance/validation, BCrypt password handling, and protected route ownership.
 - `player-profiles.md` - Current player profile, active vehicle selection, player currencies, and owned/researched vehicle DTOs.
 - `vehicles-and-research.md` - Vehicle catalog, faction/branch filtering, tech tree links, research unlocks, ownership purchase/sell/debug flows, and vehicle XP conversion.
+- `robot-characteristics.md` - Ukrainian player-facing reference for every seeded robot, with grouped statistics, roles, and research costs.
 - `matches-and-rewards.md` - Match creation, result submission, anti-cheat clamps, XP/Bolts/MMR/free-XP reward calculations, and participant history.
 - `maps-and-leaderboards.md` - Map listing and leaderboard endpoints for MMR, free XP, and vehicle XP.
 - `database-ef-core.md` - `AppDbContext`, EF Core entities, relationships, indexes, migrations, PostgreSQL setup, and seed data.

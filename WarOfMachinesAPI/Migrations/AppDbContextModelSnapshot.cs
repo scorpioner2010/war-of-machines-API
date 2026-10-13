@@ -336,6 +336,9 @@ namespace WarOfMachines.Migrations
                     b.Property<float>("Speed")
                         .HasColumnType("real");
 
+                    b.Property<float>("TraverseAcceleration")
+                        .HasColumnType("real");
+
                     b.Property<float>("TraverseSpeed")
                         .HasColumnType("real");
 

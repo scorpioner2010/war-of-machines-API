@@ -3,7 +3,7 @@
 ## Current Behavior
 The app uses EF Core 8 with PostgreSQL through Npgsql. `Program.cs` resolves the connection string, registers `AppDbContext`, auto-applies migrations at startup, and runs idempotent seed data. `AppDbContextFactory` mirrors connection resolution for design-time migrations. Entities cover players, vehicles, factions, research links, owned vehicles, researched unlocks, matches, match participants, and maps.
 
-`SeedData.Initialize` updates existing vehicles by `Code`, so seeded vehicle balance changes are applied on startup without a schema migration. Current seeded vehicle accuracy spans `0.8` to `2.0`, and penetration spans `90` to `135`.
+`SeedData.Initialize` updates existing vehicles by `Code`, so seeded vehicle balance changes are applied on startup without a schema migration. Current seeded vehicle accuracy spans `0.8` to `2.0`, penetration spans `90` to `135`, and projectile speed spans `90` to `150` after linear rebalancing that preserves the original robot order. Movement speed spans `1.26` to `5.616` after the global 50% reduction and `IA Strider`'s 30% increase, and acceleration spans `0.275` to `1.0` after its second global 50% reduction. `TraverseAcceleration` is a separate persisted body-turn acceleration field; every seeded value is 100 times the corresponding movement `Acceleration` and ranges from `27.5` to `100`. Iron Alliance turret-turn speed is the average of its original and reduced values, ranging from `11.25` to `24`; Nova Syndicate turret-turn speed is reduced by 15% and ranges from `51.85` to `68`.
 
 ## Owner Files
 - `Data/AppDbContext.cs` - DbSets, relationships, indexes, check constraints, delete behavior.
@@ -16,6 +16,7 @@ The app uses EF Core 8 with PostgreSQL through Npgsql. `Program.cs` resolves the
 - `Migrations/20260512084921_AddVehicleProjectileStats.cs` - replaces vehicle `Damage` with projectile stat columns and constraints.
 - `Migrations/20260512114908_AddUserVehicleResearches.cs` - adds researched unlock table.
 - `Migrations/20260517071952_AddVehicleViewRange.cs` - adds `ViewRange` and positive check constraint.
+- `Migrations/20261014120000_AddVehicleTraverseAcceleration.cs` - adds `TraverseAcceleration` and copies the current `Acceleration` into it for existing vehicles.
 - `Migrations/AppDbContextModelSnapshot.cs` - current EF Core model snapshot.
 
 ## Important Configuration
