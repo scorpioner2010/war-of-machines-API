@@ -61,6 +61,7 @@ namespace WarOfMachines.Controllers
                     AimTime = v.AimTime,
                     Speed = v.Speed,
                     Acceleration = v.Acceleration,
+                    TraverseAcceleration = v.TraverseAcceleration,
                     TraverseSpeed = v.TraverseSpeed,
                     TurretTraverseSpeed = v.TurretTraverseSpeed,
 
@@ -107,6 +108,7 @@ namespace WarOfMachines.Controllers
                 AimTime = v.AimTime,
                 Speed = v.Speed,
                 Acceleration = v.Acceleration,
+                TraverseAcceleration = v.TraverseAcceleration,
                 TraverseSpeed = v.TraverseSpeed,
                 TurretTraverseSpeed = v.TurretTraverseSpeed,
 
@@ -150,6 +152,7 @@ namespace WarOfMachines.Controllers
                 AimTime = v.AimTime,
                 Speed = v.Speed,
                 Acceleration = v.Acceleration,
+                TraverseAcceleration = v.TraverseAcceleration,
                 TraverseSpeed = v.TraverseSpeed,
                 TurretTraverseSpeed = v.TurretTraverseSpeed,
 
@@ -254,6 +257,7 @@ namespace WarOfMachines.Controllers
                     branch = v.Branch,
                     factionCode = v.Faction != null ? v.Faction.Code : string.Empty,
                     shellSpeed = v.ShellSpeed,
+                    traverseAcceleration = v.TraverseAcceleration,
                     turretTraverseSpeed = v.TurretTraverseSpeed,
                     shellsCount = v.ShellsCount,
                     damageMin = v.DamageMin,
@@ -309,6 +313,7 @@ namespace WarOfMachines.Controllers
 
         public float Speed { get; set; }
         public float Acceleration { get; set; }
+        public float TraverseAcceleration { get; set; }
         public float TraverseSpeed { get; set; }
         public float TurretTraverseSpeed { get; set; }
 

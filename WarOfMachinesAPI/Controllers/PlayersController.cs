@@ -64,6 +64,7 @@ namespace WarOfMachines.Controllers
                 ActiveVehicleCode = active?.Vehicle?.Code ?? string.Empty,
                 ActiveVehicleName = active?.Vehicle?.Name ?? string.Empty,
                 ActiveVehicleShellSpeed = active?.Vehicle?.ShellSpeed ?? 0f,
+                ActiveVehicleTraverseAcceleration = active?.Vehicle?.TraverseAcceleration ?? 0f,
                 ActiveVehicleTurretTraverseSpeed = active?.Vehicle?.TurretTraverseSpeed ?? 0f,
                 ActiveVehicleViewRange = active?.Vehicle?.ViewRange ?? 0f,
 
@@ -73,6 +74,7 @@ namespace WarOfMachines.Controllers
                     Code = v.Vehicle?.Code ?? string.Empty,
                     Name = v.Vehicle?.Name ?? string.Empty,
                     ShellSpeed = v.Vehicle?.ShellSpeed ?? 0f,
+                    TraverseAcceleration = v.Vehicle?.TraverseAcceleration ?? 0f,
                     TurretTraverseSpeed = v.Vehicle?.TurretTraverseSpeed ?? 0f,
                     ViewRange = v.Vehicle?.ViewRange ?? 0f,
                     IsActive = v.IsActive,
@@ -145,6 +147,7 @@ namespace WarOfMachines.Controllers
         public string ActiveVehicleCode { get; set; } = "";
         public string ActiveVehicleName { get; set; } = "";
         public float ActiveVehicleShellSpeed { get; set; }
+        public float ActiveVehicleTraverseAcceleration { get; set; }
         public float ActiveVehicleTurretTraverseSpeed { get; set; }
         public float ActiveVehicleViewRange { get; set; }
 
@@ -158,6 +161,7 @@ namespace WarOfMachines.Controllers
         public string Code { get; set; } = "";
         public string Name { get; set; } = "";
         public float ShellSpeed { get; set; }
+        public float TraverseAcceleration { get; set; }
         public float TurretTraverseSpeed { get; set; }
         public float ViewRange { get; set; }
         public bool IsActive { get; set; }

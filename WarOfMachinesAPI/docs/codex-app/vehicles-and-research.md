@@ -1,9 +1,11 @@
 # Vehicles And Research
 
 ## Current Behavior
-The vehicle catalog is public and stores vehicles by unique code with faction, branch, class, level, purchase cost, combat stats, armor strings, and visibility. Research links model predecessor-to-successor unlocks with XP cost on the predecessor. Authenticated users can research vehicles, buy researched vehicles with Bolts, sell vehicles for half purchase cost, debug-add vehicles for free, remove vehicles, set active vehicles, and convert Free XP to owned vehicle XP.
+The vehicle catalog is public and stores vehicles by unique code with faction, branch, class, level, purchase cost, combat stats, armor strings, and visibility. `TraverseAcceleration` controls how quickly the robot body reaches `TraverseSpeed` when it starts turning. Research links model predecessor-to-successor unlocks with XP cost on the predecessor. Authenticated users can research vehicles, buy researched vehicles with Bolts, sell vehicles for half purchase cost, debug-add vehicles for free, remove vehicles, set active vehicles, and convert Free XP to owned vehicle XP.
 
-Seeded vehicle combat stats are owned by `Data/SeedData.cs` and are written idempotently on startup. Current seeded `Accuracy` values are balanced from `0.8` to `2.0`, where lower values are more accurate. Current seeded `Penetration` values are balanced from `90` to `135`.
+Seeded vehicle combat stats are owned by `Data/SeedData.cs` and are written idempotently on startup. Current seeded `Accuracy` values are balanced from `0.8` to `2.0`, where lower values are more accurate. Current seeded `Penetration` values are balanced from `90` to `135`. `ShellSpeed` is linearly balanced from `90` to `150` while preserving the robots' original order. `Speed` is balanced from `1.26` to `5.616`: the global 50% reduction remains in effect, while `IA Strider` has a 30% increase from its reduced value. All seeded `Acceleration` values are reduced by half again and now range from `0.275` to `1.0`; all `TraverseAcceleration` values are 100 times their corresponding `Acceleration` and range from `27.5` to `100`. Iron Alliance `TurretTraverseSpeed` values are the average of their original and reduced values, ranging from `11.25` to `24`; Nova Syndicate turret-turn values are reduced by 15% to `51.85`–`68`. `IA Strider` damage is reduced by 30% to `25.2`–`37.8`.
+
+`robot-characteristics.md` is the Ukrainian player-facing reference for all currently seeded robots. It groups the same catalog values by role, survivability, weapon, and movement, and must be updated when seeded vehicle stats or research costs change.
 
 ## Owner Files
 - `Controllers/VehiclesController.cs` - public vehicle catalog, details, tech tree link management, and graph endpoints.
@@ -29,13 +31,13 @@ Seeded vehicle combat stats are owned by `Data/SeedData.cs` and are written idem
 - Purchase depends on player `Bolts`; research depends on predecessor ownership and XP.
 
 ## Routes / Contracts
-- `GET /vehicles?faction=iron_alliance&branch=tracked` returns catalog DTOs.
-- `GET /vehicles/{id:int}` and `GET /vehicles/by-code/{code}` return a vehicle DTO or `404`.
+- `GET /vehicles?faction=iron_alliance&branch=tracked` returns catalog DTOs, including `traverseAcceleration`.
+- `GET /vehicles/{id:int}` and `GET /vehicles/by-code/{code}` return a vehicle DTO, including `traverseAcceleration`, or `404`.
 - `GET /vehicles/{id:int}/research-from` returns predecessor IDs and required XP for a successor.
 - `POST /vehicles/links` creates a research link and rejects self-links, missing vehicles, and duplicates.
 - `DELETE /vehicles/links/{id:int}` deletes a research link.
-- `GET /vehicles/graph?faction=iron_alliance` returns `nodes` and `edges`.
-- `GET /user-vehicles/me` and `GET /user-vehicles/xp` return owned vehicle XP/research state and player Free XP.
+- `GET /vehicles/graph?faction=iron_alliance` returns `nodes`, including `traverseAcceleration`, and `edges`.
+- `GET /user-vehicles/me` and `GET /user-vehicles/xp` return owned vehicle XP/research state, `traverseAcceleration`, and player Free XP.
 - `PUT /user-vehicles/me/active/{vehicleId:int}` sets active owned vehicle transactionally.
 - `POST /user-vehicles/me/buy/{code}` buys a researched vehicle with Bolts.
 - `POST /user-vehicles/me/sell/{vehicleId:int}` sells a vehicle for half purchase cost and prevents selling the last vehicle.

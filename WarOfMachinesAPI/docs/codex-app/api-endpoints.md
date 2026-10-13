@@ -27,24 +27,24 @@ The API uses attribute-routed controllers plus a few minimal admin routes. JSON 
 ## Routes / Contracts
 - `POST /auth/register` - anonymous; body `{ username, password }`; creates player, starter vehicle/research, returns `{ token }`.
 - `POST /auth/login` - anonymous; body `{ username, password }`; verifies password, auto-heals starter vehicle, returns `{ token }`.
-- `GET /players/me` - JWT required; returns player currencies, active vehicle, owned vehicles, researched vehicles.
+- `GET /players/me` - JWT required; returns player currencies, active vehicle, owned vehicles, researched vehicles, and active/owned vehicle `traverseAcceleration` values.
 - `PUT /players/me/active/{vehicleId}` - JWT required; sets active owned vehicle.
-- `GET /user-vehicles/me` - JWT required; returns free XP and owned vehicles.
+- `GET /user-vehicles/me` - JWT required; returns free XP, owned vehicles, and each vehicle's `traverseAcceleration`.
 - `PUT /user-vehicles/me/active/{vehicleId}` - JWT required; sets active owned vehicle.
 - `POST /user-vehicles/me/buy/{code}` - JWT required; buys researched vehicle by catalog code using Bolts.
 - `POST /user-vehicles/me/sell/{vehicleId}` - JWT required; sells owned vehicle for half purchase cost.
 - `POST /user-vehicles/research/{vehicleId}` - JWT required; unlocks a vehicle, spending predecessor XP when required.
 - `POST /user-vehicles/me/add-by-code/{code}` - JWT required; debug/free add by code.
 - `DELETE /user-vehicles/me/{vehicleId}` - JWT required; removes owned vehicle without refund.
-- `GET /user-vehicles/xp` - JWT required; returns owned vehicle XP and free XP.
+- `GET /user-vehicles/xp` - JWT required; returns owned vehicle XP, `traverseAcceleration`, and free XP.
 - `POST /user-vehicles/{vehicleId}/convert-freexp` - JWT required; body `{ amount }`; moves free XP to an owned vehicle.
-- `GET /vehicles?faction=&branch=` - public; vehicle catalog filter.
-- `GET /vehicles/{id}` - public; vehicle details.
-- `GET /vehicles/by-code/{code}` - public; vehicle details by code.
+- `GET /vehicles?faction=&branch=` - public; vehicle catalog filter, including `traverseAcceleration`.
+- `GET /vehicles/{id}` - public; vehicle details, including `traverseAcceleration`.
+- `GET /vehicles/by-code/{code}` - public; vehicle details by code, including `traverseAcceleration`.
 - `GET /vehicles/{id}/research-from` - public; predecessor requirements for successor vehicle.
 - `POST /vehicles/links` - public; creates tech tree link.
 - `DELETE /vehicles/links/{id}` - public; deletes tech tree link.
-- `GET /vehicles/graph?faction=` - public; tech tree nodes and edges.
+- `GET /vehicles/graph?faction=` - public; tech tree nodes, including `traverseAcceleration`, and edges.
 - `POST /matches/start` - JWT required; body `{ map }`; creates match.
 - `POST /matches/{matchId}/end` - JWT required; submits participants and awards progression.
 - `GET /matches/{matchId}/participants` - JWT required; lists stored participant results.
