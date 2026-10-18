@@ -32,6 +32,8 @@ namespace WarOfMachines.Models
         public int Kills { get; set; } = 0;
         public int Damage { get; set; } = 0;
         public int XpEarned { get; set; } = 0;
+        public int BoltsEarned { get; set; } = 0;
+        public int FreeXpEarned { get; set; } = 0;
         public int MmrDelta { get; set; } = 0;
 
         // Навігаційні властивості

@@ -110,6 +110,12 @@ namespace WarOfMachines.Migrations
                     b.Property<int>("Damage")
                         .HasColumnType("integer");
 
+                    b.Property<int>("BoltsEarned")
+                        .HasColumnType("integer");
+
+                    b.Property<int>("FreeXpEarned")
+                        .HasColumnType("integer");
+
                     b.Property<int>("Kills")
                         .HasColumnType("integer");
 

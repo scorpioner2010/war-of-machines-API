@@ -174,6 +174,7 @@ namespace WarOfMachines.Controllers
                                 + (damage * BoltsPerDamage)
                                 + (kills * BoltsPerKill);
                     bolts = Math.Clamp(bolts, 0, BoltsCapPerBattle);
+                    int freeXp = (int)Math.Round(xpTotal * FreeXpPercent, MidpointRounding.AwayFromZero);
 
                     // --- MMR ---
                     int enemyTeam = FindEnemyTeam(teamToUserIds.Keys.ToList(), raw.Team);
@@ -205,6 +206,8 @@ namespace WarOfMachines.Controllers
                         Kills = kills,
                         Damage = damage,
                         XpEarned = xpTotal,
+                        BoltsEarned = bolts,
+                        FreeXpEarned = freeXp,
                         MmrDelta = mmrDelta
                     };
                     _db.MatchParticipants.Add(mp);
@@ -212,7 +215,7 @@ namespace WarOfMachines.Controllers
                     // --- Оновлення прогресу ---
                     user.Mmr += mmrDelta;
                     user.Bolts += bolts;
-                    user.FreeXp += (int)Math.Round(xpTotal * FreeXpPercent, MidpointRounding.AwayFromZero);
+                    user.FreeXp += freeXp;
 
                     // Знаходимо техніку гравця
                     var uv = _db.UserVehicles.FirstOrDefault(v => v.UserId == raw.UserId && v.VehicleId == raw.VehicleId);
@@ -223,9 +226,10 @@ namespace WarOfMachines.Controllers
                 }
 
                 _db.SaveChanges();
+                List<MatchParticipantResponse> participants = GetParticipantResponses(match.Id);
                 tx.Commit();
 
-                return Ok(new { ok = true });
+                return Ok(new { ok = true, participants });
             });
         }
 
@@ -266,26 +270,48 @@ namespace WarOfMachines.Controllers
         [HttpGet("{matchId:int}/participants")]
         public IActionResult GetParticipants(int matchId)
         {
-            var list = _db.MatchParticipants
+            return Ok(GetParticipantResponses(matchId));
+        }
+
+        private List<MatchParticipantResponse> GetParticipantResponses(int matchId)
+        {
+            return _db.MatchParticipants
+                .AsNoTracking()
                 .Where(x => x.MatchId == matchId)
-                .Include(x => x.User)
-                .Include(x => x.Vehicle)
-                .Select(x => new
+                .Select(x => new MatchParticipantResponse
                 {
-                    x.UserId,
+                    UserId = x.UserId,
                     Username = x.User != null ? x.User.Username : "",
-                    x.VehicleId,
+                    VehicleId = x.VehicleId,
                     VehicleName = x.Vehicle != null ? x.Vehicle.Name : "",
-                    x.Team,
-                    x.Result,
-                    x.Kills,
-                    x.Damage,
-                    x.XpEarned,
-                    x.MmrDelta
+                    Team = x.Team,
+                    Result = x.Result,
+                    Kills = x.Kills,
+                    Damage = x.Damage,
+                    XpEarned = x.XpEarned,
+                    Bolts = x.BoltsEarned,
+                    FreeXp = x.FreeXpEarned,
+                    MmrDelta = x.MmrDelta,
+                    RewardsCalculated = x.BoltsEarned > 0
                 })
                 .ToList();
+        }
 
-            return Ok(list);
+        public class MatchParticipantResponse
+        {
+            public int UserId { get; set; }
+            public string Username { get; set; } = string.Empty;
+            public int VehicleId { get; set; }
+            public string VehicleName { get; set; } = string.Empty;
+            public int Team { get; set; }
+            public string Result { get; set; } = string.Empty;
+            public int Kills { get; set; }
+            public int Damage { get; set; }
+            public int XpEarned { get; set; }
+            public int Bolts { get; set; }
+            public int FreeXp { get; set; }
+            public int MmrDelta { get; set; }
+            public bool RewardsCalculated { get; set; }
         }
     }
 }

@@ -1,12 +1,12 @@
 # Matches And Rewards
 
 ## Current Behavior
-Authenticated clients can start a match and later submit final participant results once. Ending a match validates participants, rejects duplicate users, rejects unknown users, prevents double-submission, clamps kills/damage, computes XP, Bolts, MMR delta, and Free XP, records `MatchParticipant` rows, updates player currencies/MMR, and adds XP to the submitted owned vehicle if found.
+Authenticated clients can start a match and later submit final participant results once. Ending a match validates participants, rejects duplicate users, rejects unknown users, prevents double-submission, clamps kills/damage, computes XP, Bolts, MMR delta, and Free XP, records all of those exact reward amounts in `MatchParticipant`, updates player currencies/MMR, and adds XP to the submitted owned vehicle if found. The end response and participant-history response both return the stored amounts, so a result popup is not derived from mutable profile totals.
 
 ## Owner Files
 - `Controllers/MatchesController.cs` - match start/end/history routes, reward constants, participant validation, reward calculation, transactions.
 - `Models/Match.cs` - match map and start/end timestamps.
-- `Models/MatchParticipant.cs` - per-user match result, vehicle, team, kills, damage, XP, MMR delta.
+- `Models/MatchParticipant.cs` - per-user match result, vehicle, team, kills, damage, XP, Bolts, Free XP, and MMR delta.
 - `Models/Player.cs` - MMR, Bolts, Free XP updated by match results.
 - `Models/UserVehicle.cs` - owned vehicle XP updated by match results.
 - `Data/AppDbContext.cs` - match participant relationships and delete behavior.
@@ -23,8 +23,8 @@ Authenticated clients can start a match and later submit final participant resul
 
 ## Routes / Contracts
 - `POST /matches/start` body `{ map }`; empty map becomes `default_map`; returns `{ matchId }`.
-- `POST /matches/{matchId:int}/end` body `{ participants: [{ userId, vehicleId, team, result, kills, damage }] }`; returns `{ ok = true }`.
-- `GET /matches/{matchId:int}/participants` returns stored participant result DTOs with username and vehicle name.
+- `POST /matches/{matchId:int}/end` body `{ participants: [{ userId, vehicleId, team, result, kills, damage }] }`; returns `{ ok, participants }`. Every new participant item contains `userId`, the submitted stats, `xpEarned`, `bolts`, `freeXp`, `mmrDelta`, and `rewardsCalculated: true`.
+- `GET /matches/{matchId:int}/participants` returns the same stored participant result DTOs with username and vehicle name. Historical rows created before reward amounts were persisted have `rewardsCalculated: false`; clients must treat their reward values as unavailable rather than as a confirmed zero.
 
 ## Tests
 - No automated match/reward tests were found.

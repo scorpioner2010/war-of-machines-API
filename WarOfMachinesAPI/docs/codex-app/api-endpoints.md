@@ -25,7 +25,7 @@ The API uses attribute-routed controllers plus a few minimal admin routes. JSON 
 - `[Authorize]` is set at controller level for players, user vehicles, matches, and leaderboard.
 
 ## Routes / Contracts
-- `POST /auth/register` - anonymous; body `{ username, password }`; creates player, starter vehicle/research, returns `{ token }`.
+- `POST /auth/register` - anonymous; body `{ username, password }`; creates a player with `5,000` free XP, `50,000` Bolts, starter vehicle/research, and returns `{ token }`.
 - `POST /auth/login` - anonymous; body `{ username, password }`; verifies password, auto-heals starter vehicle, returns `{ token }`.
 - `GET /players/me` - JWT required; returns player currencies, active vehicle, owned vehicles, researched vehicles, and active/owned vehicle `traverseAcceleration` values.
 - `PUT /players/me/active/{vehicleId}` - JWT required; sets active owned vehicle.
@@ -46,8 +46,8 @@ The API uses attribute-routed controllers plus a few minimal admin routes. JSON 
 - `DELETE /vehicles/links/{id}` - public; deletes tech tree link.
 - `GET /vehicles/graph?faction=` - public; tech tree nodes, including `traverseAcceleration`, and edges.
 - `POST /matches/start` - JWT required; body `{ map }`; creates match.
-- `POST /matches/{matchId}/end` - JWT required; submits participants and awards progression.
-- `GET /matches/{matchId}/participants` - JWT required; lists stored participant results.
+- `POST /matches/{matchId}/end` - JWT required; submits participants, awards progression, and returns `{ ok, participants }` with each participant's submitted stats and exact `xpEarned`, `bolts`, `freeXp`, `mmrDelta`, and `rewardsCalculated` flag.
+- `GET /matches/{matchId}/participants` - JWT required; lists the same stored participant-result fields. A `rewardsCalculated: false` item has no authoritative per-match currency breakdown and must not be displayed as a zero reward.
 - `GET /maps` - public; lists maps.
 - `GET /leaderboard/mmr?top=10` - JWT required; top players by MMR.
 - `GET /leaderboard/free-xp?top=10` - JWT required; top players by free XP.
