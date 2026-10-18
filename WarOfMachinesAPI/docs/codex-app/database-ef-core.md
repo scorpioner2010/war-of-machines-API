@@ -17,6 +17,7 @@ The app uses EF Core 8 with PostgreSQL through Npgsql. `Program.cs` resolves the
 - `Migrations/20260512114908_AddUserVehicleResearches.cs` - adds researched unlock table.
 - `Migrations/20260517071952_AddVehicleViewRange.cs` - adds `ViewRange` and positive check constraint.
 - `Migrations/20261014120000_AddVehicleTraverseAcceleration.cs` - adds `TraverseAcceleration` and copies the current `Acceleration` into it for existing vehicles.
+- `Migrations/20261018120000_AddMatchParticipantRewardAmounts.cs` - adds persisted per-match `BoltsEarned` and `FreeXpEarned` values. Existing historical participant rows receive `0`; the match API marks those rows as not reward-calculated so clients do not present the default values as a valid reward.
 - `Migrations/AppDbContextModelSnapshot.cs` - current EF Core model snapshot.
 
 ## Important Configuration

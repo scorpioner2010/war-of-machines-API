@@ -65,8 +65,8 @@ namespace WarOfMachines.Controllers
                 IsAdmin = false,
                 CreatedAt = DateTimeOffset.UtcNow,
                 Mmr = 0,
-                FreeXp = 0,
-                Bolts = 10000,
+                FreeXp = 5000,
+                Bolts = 50000,
                 Adamant = 0
             };
 

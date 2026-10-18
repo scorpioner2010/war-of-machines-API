@@ -527,3 +527,13 @@ C:\Users\TorasPC\AppData\Local\Temp\WarOfMachinesAPI-codex-output\Debug\net8.0\W
 C:\Users\TorasPC\AppData\Local\Temp\WarOfMachinesAPI-codex-output\Debug\net8.0\WarOfMachines.runtimeconfig.json
 C:\Users\TorasPC\AppData\Local\Temp\WarOfMachinesAPI-codex-output\Debug\net8.0\WarOfMachines.dll
 C:\Users\TorasPC\AppData\Local\Temp\WarOfMachinesAPI-codex-output\Debug\net8.0\WarOfMachines.pdb
+C:\Users\TorasPC\AppData\Local\Temp\codex-wom-api-build-20261018\appsettings.Development.json
+C:\Users\TorasPC\AppData\Local\Temp\codex-wom-api-build-20261018\appsettings.json
+C:\Users\TorasPC\AppData\Local\Temp\codex-wom-api-build-20261018\appsettings.Production.json
+C:\Users\TorasPC\AppData\Local\Temp\codex-wom-api-build-20261018\WarOfMachines.staticwebassets.runtime.json
+C:\Users\TorasPC\AppData\Local\Temp\codex-wom-api-build-20261018\WarOfMachines.staticwebassets.endpoints.json
+C:\Users\TorasPC\AppData\Local\Temp\codex-wom-api-build-20261018\WarOfMachines.exe
+C:\Users\TorasPC\AppData\Local\Temp\codex-wom-api-build-20261018\WarOfMachines.deps.json
+C:\Users\TorasPC\AppData\Local\Temp\codex-wom-api-build-20261018\WarOfMachines.runtimeconfig.json
+C:\Users\TorasPC\AppData\Local\Temp\codex-wom-api-build-20261018\WarOfMachines.dll
+C:\Users\TorasPC\AppData\Local\Temp\codex-wom-api-build-20261018\WarOfMachines.pdb

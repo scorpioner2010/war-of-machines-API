@@ -1,7 +1,7 @@
 # Authentication And Authorization
 
 ## Current Behavior
-Users register and login with username/password. Passwords are hashed with BCrypt. Successful auth returns a 7 day JWT containing name identifier, username, and role (`admin` or `user`). JWT bearer validation checks lifetime and signing key but does not validate issuer or audience. Protected controllers use `[Authorize]`; anonymous routes are explicitly allowed for `/auth/register` and `/auth/login`.
+Users register and login with username/password. Registration creates a non-admin player with `5,000` free XP, `50,000` Bolts, no Adamant, no MMR, and the starter vehicle/research. Passwords are hashed with BCrypt. Successful auth returns a 7 day JWT containing name identifier, username, and role (`admin` or `user`). JWT bearer validation checks lifetime and signing key but does not validate issuer or audience. Protected controllers use `[Authorize]`; anonymous routes are explicitly allowed for `/auth/register` and `/auth/login`.
 
 ## Owner Files
 - `Program.cs` - JWT bearer registration, signing key creation, auth/authorization middleware order.
