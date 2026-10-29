@@ -138,6 +138,9 @@ namespace WarOfMachines.Controllers
             if (vehicle == null)
                 return NotFound("Vehicle code not found.");
 
+            if (!vehicle.IsVisible)
+                return BadRequest("Vehicle is not available.");
+
             if (_db.UserVehicles.Any(x => x.UserId == uid && x.VehicleId == vehicle.Id))
                 return Conflict("Vehicle already owned.");
 
@@ -385,6 +388,9 @@ namespace WarOfMachines.Controllers
             var vehicle = _db.Vehicles.FirstOrDefault(v => v.Code == code);
             if (vehicle == null)
                 return NotFound("Vehicle code not found.");
+
+            if (!vehicle.IsVisible)
+                return BadRequest("Vehicle is not available.");
 
             bool already = _db.UserVehicles.Any(x => x.UserId == uid && x.VehicleId == vehicle.Id);
             if (already)

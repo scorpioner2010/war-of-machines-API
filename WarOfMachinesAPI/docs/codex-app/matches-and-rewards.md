@@ -7,6 +7,7 @@ Authenticated clients can start a match and later submit final participant resul
 - `Controllers/MatchesController.cs` - match start/end/history routes, reward constants, participant validation, reward calculation, transactions.
 - `Models/Match.cs` - match map and start/end timestamps.
 - `Models/MatchParticipant.cs` - per-user match result, vehicle, team, kills, damage, XP, Bolts, Free XP, and MMR delta.
+- `Controllers/PlayersController.cs` - consumes those persisted participant rows for the authenticated live profile-statistics aggregate.
 - `Models/Player.cs` - MMR, Bolts, Free XP updated by match results.
 - `Models/UserVehicle.cs` - owned vehicle XP updated by match results.
 - `Data/AppDbContext.cs` - match participant relationships and delete behavior.
