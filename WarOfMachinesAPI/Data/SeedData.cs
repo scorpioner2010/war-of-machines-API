@@ -175,6 +175,115 @@ namespace WarOfMachines.Data
             EnsureLink(iaStarter.Id, iaL2Guardian.Id, requiredXp: 700);
             EnsureLink(iaStarter.Id, iaL2Colossus.Id, requiredXp: 1000);
 
+            var iaL3ScoutWraith = EnsureVehicle(new Vehicle
+            {
+                Code = "ia_l3_scout_wraith",
+                Name = "IA Wraith",
+                FactionId = iron.Id,
+                Branch = "tracked",
+                Class = VehicleClass.Scout,
+                Level = 3,
+                PurchaseCost = 22000,
+                HP = 230, ShellSpeed = 150f, ShellsCount = 170, DamageMin = 34.8f, DamageMax = 52.2f, Penetration = 102, ViewRange = 135f,
+                ReloadTime = 1.1f, Accuracy = 0.82f, AimTime = 0.95f,
+                Speed = 5.95f, Acceleration = 1.0f, TraverseAcceleration = 100f, TraverseSpeed = 42f, TurretTraverseSpeed = 25f,
+                TurretArmorFront = 58, TurretArmorSide = 36, TurretArmorRear = 25,
+                HullArmorFront = 53, HullArmorSide = 33, HullArmorRear = 23,
+                IsVisible = false
+            });
+
+            var iaL3GuardianWarder = EnsureVehicle(new Vehicle
+            {
+                Code = "ia_l3_guardian_warder",
+                Name = "IA Warder",
+                FactionId = iron.Id,
+                Branch = "tracked",
+                Class = VehicleClass.Guardian,
+                Level = 3,
+                PurchaseCost = 24000,
+                HP = 320, ShellSpeed = 120f, ShellsCount = 90, DamageMin = 100.8f, DamageMax = 151.2f, Penetration = 125, ViewRange = 108f,
+                ReloadTime = 2.8f, Accuracy = 1.45f, AimTime = 2.15f,
+                Speed = 3.75f, Acceleration = 0.85f, TraverseAcceleration = 85f, TraverseSpeed = 35f, TurretTraverseSpeed = 21f,
+                TurretArmorFront = 88, TurretArmorSide = 56, TurretArmorRear = 38,
+                HullArmorFront = 80, HullArmorSide = 52, HullArmorRear = 36,
+                IsVisible = false
+            });
+
+            var iaL3GuardianRampart = EnsureVehicle(new Vehicle
+            {
+                Code = "ia_l3_guardian_rampart",
+                Name = "IA Rampart",
+                FactionId = iron.Id,
+                Branch = "tracked",
+                Class = VehicleClass.Guardian,
+                Level = 3,
+                PurchaseCost = 27000,
+                HP = 360, ShellSpeed = 114f, ShellsCount = 80, DamageMin = 108f, DamageMax = 162f, Penetration = 130, ViewRange = 102f,
+                ReloadTime = 3.0f, Accuracy = 1.55f, AimTime = 2.3f,
+                Speed = 3.45f, Acceleration = 0.8f, TraverseAcceleration = 80f, TraverseSpeed = 33.5f, TurretTraverseSpeed = 20f,
+                TurretArmorFront = 100, TurretArmorSide = 64, TurretArmorRear = 43,
+                HullArmorFront = 91, HullArmorSide = 59, HullArmorRear = 40,
+                IsVisible = false
+            });
+
+            var iaL3ColossusMastodon = EnsureVehicle(new Vehicle
+            {
+                Code = "ia_l3_colossus_mastodon",
+                Name = "IA Mastodon",
+                FactionId = iron.Id,
+                Branch = "tracked",
+                Class = VehicleClass.Colossus,
+                Level = 3,
+                PurchaseCost = 36000,
+                HP = 430, ShellSpeed = 96f, ShellsCount = 58, DamageMin = 145.2f, DamageMax = 217.8f, Penetration = 145, ViewRange = 88f,
+                ReloadTime = 4.5f, Accuracy = 1.9f, AimTime = 3.6f,
+                Speed = 2.95f, Acceleration = 0.65f, TraverseAcceleration = 65f, TraverseSpeed = 28f, TurretTraverseSpeed = 12.2f,
+                TurretArmorFront = 130, TurretArmorSide = 82, TurretArmorRear = 56,
+                HullArmorFront = 116, HullArmorSide = 75, HullArmorRear = 52,
+                IsVisible = false
+            });
+
+            var iaL4GuardianCitadel = EnsureVehicle(new Vehicle
+            {
+                Code = "ia_l4_guardian_citadel",
+                Name = "IA Citadel",
+                FactionId = iron.Id,
+                Branch = "tracked",
+                Class = VehicleClass.Guardian,
+                Level = 4,
+                PurchaseCost = 44000,
+                HP = 445, ShellSpeed = 126f, ShellsCount = 95, DamageMin = 120f, DamageMax = 180f, Penetration = 140, ViewRange = 110f,
+                ReloadTime = 2.75f, Accuracy = 1.6f, AimTime = 2.05f,
+                Speed = 3.6f, Acceleration = 0.825f, TraverseAcceleration = 82.5f, TraverseSpeed = 35f, TurretTraverseSpeed = 20.5f,
+                TurretArmorFront = 118, TurretArmorSide = 75, TurretArmorRear = 50,
+                HullArmorFront = 108, HullArmorSide = 70, HullArmorRear = 48,
+                IsVisible = false
+            });
+
+            var iaL4ColossusDreadnought = EnsureVehicle(new Vehicle
+            {
+                Code = "ia_l4_colossus_dreadnought",
+                Name = "IA Dreadnought",
+                FactionId = iron.Id,
+                Branch = "tracked",
+                Class = VehicleClass.Colossus,
+                Level = 4,
+                PurchaseCost = 56000,
+                HP = 560, ShellSpeed = 92f, ShellsCount = 52, DamageMin = 172.8f, DamageMax = 259.2f, Penetration = 155, ViewRange = 90f,
+                ReloadTime = 4.8f, Accuracy = 2.0f, AimTime = 3.9f,
+                Speed = 2.6f, Acceleration = 0.55f, TraverseAcceleration = 55f, TraverseSpeed = 25.5f, TurretTraverseSpeed = 10.5f,
+                TurretArmorFront = 160, TurretArmorSide = 100, TurretArmorRear = 68,
+                HullArmorFront = 144, HullArmorSide = 93, HullArmorRear = 64,
+                IsVisible = false
+            });
+
+            EnsureLink(iaL2Scout.Id, iaL3ScoutWraith.Id, requiredXp: 1800);
+            EnsureLink(iaL2Guardian.Id, iaL3GuardianWarder.Id, requiredXp: 2200);
+            EnsureLink(iaL2Guardian.Id, iaL3GuardianRampart.Id, requiredXp: 2600);
+            EnsureLink(iaL2Colossus.Id, iaL3ColossusMastodon.Id, requiredXp: 3200);
+            EnsureLink(iaL3GuardianWarder.Id, iaL4GuardianCitadel.Id, requiredXp: 5000);
+            EnsureLink(iaL3ColossusMastodon.Id, iaL4ColossusDreadnought.Id, requiredXp: 6200);
+
             // Nova Syndicate (biped) — L1 + три L2
             var nvStarter = EnsureVehicle(new Vehicle
             {
@@ -249,6 +358,133 @@ namespace WarOfMachines.Data
             EnsureLink(nvStarter.Id, nvL2Scout.Id,    requiredXp: 400);
             EnsureLink(nvStarter.Id, nvL2Guardian.Id, requiredXp: 700);
             EnsureLink(nvStarter.Id, nvL2Colossus.Id, requiredXp: 1000);
+
+            var nvL3ScoutRift = EnsureVehicle(new Vehicle
+            {
+                Code = "nv_l3_scout_rift",
+                Name = "Nova Rift",
+                FactionId = nova.Id,
+                Branch = "biped",
+                Class = VehicleClass.Scout,
+                Level = 3,
+                PurchaseCost = 22000,
+                HP = 220, ShellSpeed = 150f, ShellsCount = 205, DamageMin = 33.6f, DamageMax = 50.4f, Penetration = 104, ViewRange = 140f,
+                ReloadTime = 0.95f, Accuracy = 0.8f, AimTime = 0.85f,
+                Speed = 1.98f, Acceleration = 0.425f, TraverseAcceleration = 42.5f, TraverseSpeed = 76f, TurretTraverseSpeed = 72f,
+                TurretArmorFront = 54, TurretArmorSide = 34, TurretArmorRear = 23,
+                HullArmorFront = 49, HullArmorSide = 31, HullArmorRear = 21,
+                IsVisible = false
+            });
+
+            var nvL3ScoutSpecter = EnsureVehicle(new Vehicle
+            {
+                Code = "nv_l3_scout_specter",
+                Name = "Nova Specter",
+                FactionId = nova.Id,
+                Branch = "biped",
+                Class = VehicleClass.Scout,
+                Level = 3,
+                PurchaseCost = 25000,
+                HP = 205, ShellSpeed = 150f, ShellsCount = 220, DamageMin = 30f, DamageMax = 45f, Penetration = 101, ViewRange = 145f,
+                ReloadTime = 0.85f, Accuracy = 0.8f, AimTime = 0.8f,
+                Speed = 2.1f, Acceleration = 0.45f, TraverseAcceleration = 45f, TraverseSpeed = 78f, TurretTraverseSpeed = 74f,
+                TurretArmorFront = 50, TurretArmorSide = 32, TurretArmorRear = 22,
+                HullArmorFront = 46, HullArmorSide = 29, HullArmorRear = 20,
+                IsVisible = false
+            });
+
+            var nvL4ScoutHorizon = EnsureVehicle(new Vehicle
+            {
+                Code = "nv_l4_scout_horizon",
+                Name = "Nova Horizon",
+                FactionId = nova.Id,
+                Branch = "biped",
+                Class = VehicleClass.Scout,
+                Level = 4,
+                PurchaseCost = 47000,
+                HP = 275, ShellSpeed = 150f, ShellsCount = 235, DamageMin = 36f, DamageMax = 54f, Penetration = 110, ViewRange = 155f,
+                ReloadTime = 0.85f, Accuracy = 0.8f, AimTime = 0.75f,
+                Speed = 2.28f, Acceleration = 0.475f, TraverseAcceleration = 47.5f, TraverseSpeed = 82f, TurretTraverseSpeed = 78f,
+                TurretArmorFront = 65, TurretArmorSide = 41, TurretArmorRear = 28,
+                HullArmorFront = 59, HullArmorSide = 38, HullArmorRear = 26,
+                IsVisible = false
+            });
+
+            var nvL3GuardianPrism = EnsureVehicle(new Vehicle
+            {
+                Code = "nv_l3_guardian_prism",
+                Name = "Nova Prism",
+                FactionId = nova.Id,
+                Branch = "biped",
+                Class = VehicleClass.Guardian,
+                Level = 3,
+                PurchaseCost = 26000,
+                HP = 315, ShellSpeed = 132f, ShellsCount = 95, DamageMin = 90f, DamageMax = 135f, Penetration = 130, ViewRange = 115f,
+                ReloadTime = 2.4f, Accuracy = 1.15f, AimTime = 1.8f,
+                Speed = 1.74f, Acceleration = 0.36f, TraverseAcceleration = 36f, TraverseSpeed = 70f, TurretTraverseSpeed = 64f,
+                TurretArmorFront = 94, TurretArmorSide = 60, TurretArmorRear = 40,
+                HullArmorFront = 84, HullArmorSide = 55, HullArmorRear = 37,
+                IsVisible = false
+            });
+
+            var nvL3ColossusHarrow = EnsureVehicle(new Vehicle
+            {
+                Code = "nv_l3_colossus_harrow",
+                Name = "Nova Harrow",
+                FactionId = nova.Id,
+                Branch = "biped",
+                Class = VehicleClass.Colossus,
+                Level = 3,
+                PurchaseCost = 35000,
+                HP = 420, ShellSpeed = 105f, ShellsCount = 62, DamageMin = 115.2f, DamageMax = 172.8f, Penetration = 142, ViewRange = 94f,
+                ReloadTime = 3.3f, Accuracy = 1.75f, AimTime = 2.65f,
+                Speed = 1.45f, Acceleration = 0.3f, TraverseAcceleration = 30f, TraverseSpeed = 56f, TurretTraverseSpeed = 48f,
+                TurretArmorFront = 120, TurretArmorSide = 78, TurretArmorRear = 53,
+                HullArmorFront = 108, HullArmorSide = 70, HullArmorRear = 48,
+                IsVisible = false
+            });
+
+            var nvL3ColossusOblivion = EnsureVehicle(new Vehicle
+            {
+                Code = "nv_l3_colossus_oblivion",
+                Name = "Nova Oblivion",
+                FactionId = nova.Id,
+                Branch = "biped",
+                Class = VehicleClass.Colossus,
+                Level = 3,
+                PurchaseCost = 39000,
+                HP = 470, ShellSpeed = 99f, ShellsCount = 55, DamageMin = 129.6f, DamageMax = 194.4f, Penetration = 148, ViewRange = 88f,
+                ReloadTime = 3.6f, Accuracy = 1.9f, AimTime = 2.9f,
+                Speed = 1.34f, Acceleration = 0.285f, TraverseAcceleration = 28.5f, TraverseSpeed = 53f, TurretTraverseSpeed = 46f,
+                TurretArmorFront = 136, TurretArmorSide = 88, TurretArmorRear = 60,
+                HullArmorFront = 122, HullArmorSide = 79, HullArmorRear = 54,
+                IsVisible = false
+            });
+
+            var nvL4ColossusEclipse = EnsureVehicle(new Vehicle
+            {
+                Code = "nv_l4_colossus_eclipse",
+                Name = "Nova Eclipse",
+                FactionId = nova.Id,
+                Branch = "biped",
+                Class = VehicleClass.Colossus,
+                Level = 4,
+                PurchaseCost = 60000,
+                HP = 575, ShellSpeed = 93f, ShellsCount = 50, DamageMin = 151.2f, DamageMax = 226.8f, Penetration = 158, ViewRange = 92f,
+                ReloadTime = 3.8f, Accuracy = 2.0f, AimTime = 3.05f,
+                Speed = 1.2f, Acceleration = 0.26f, TraverseAcceleration = 26f, TraverseSpeed = 50f, TurretTraverseSpeed = 44f,
+                TurretArmorFront = 160, TurretArmorSide = 103, TurretArmorRear = 70,
+                HullArmorFront = 143, HullArmorSide = 94, HullArmorRear = 64,
+                IsVisible = false
+            });
+
+            EnsureLink(nvL2Scout.Id, nvL3ScoutRift.Id, requiredXp: 1700);
+            EnsureLink(nvL2Scout.Id, nvL3ScoutSpecter.Id, requiredXp: 2200);
+            EnsureLink(nvL3ScoutRift.Id, nvL4ScoutHorizon.Id, requiredXp: 4800);
+            EnsureLink(nvL2Guardian.Id, nvL3GuardianPrism.Id, requiredXp: 2400);
+            EnsureLink(nvL2Colossus.Id, nvL3ColossusHarrow.Id, requiredXp: 3000);
+            EnsureLink(nvL2Colossus.Id, nvL3ColossusOblivion.Id, requiredXp: 3600);
+            EnsureLink(nvL3ColossusHarrow.Id, nvL4ColossusEclipse.Id, requiredXp: 6500);
 
             // --- Players ---
             if (!db.Players.Any())

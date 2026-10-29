@@ -6,7 +6,7 @@ The API uses attribute-routed controllers plus a few minimal admin routes. JSON 
 ## Owner Files
 - `Program.cs` - maps controllers, root redirect, admin minimal routes, Swagger UI.
 - `Controllers/AuthController.cs` - `/auth` registration and login.
-- `Controllers/PlayersController.cs` - `/players` authenticated profile and active vehicle routes.
+- `Controllers/PlayersController.cs` - `/players` authenticated profile, live history statistics, and active vehicle routes.
 - `Controllers/UserVehiclesController.cs` - `/user-vehicles` authenticated ownership, research, purchase, sell, XP routes.
 - `Controllers/VehiclesController.cs` - `/vehicles` catalog and tech tree link routes.
 - `Controllers/MatchesController.cs` - `/matches` authenticated match start/end/history routes.
@@ -28,23 +28,24 @@ The API uses attribute-routed controllers plus a few minimal admin routes. JSON 
 - `POST /auth/register` - anonymous; body `{ username, password }`; creates a player with `5,000` free XP, `50,000` Bolts, starter vehicle/research, and returns `{ token }`.
 - `POST /auth/login` - anonymous; body `{ username, password }`; verifies password, auto-heals starter vehicle, returns `{ token }`.
 - `GET /players/me` - JWT required; returns player currencies, active vehicle, owned vehicles, researched vehicles, and active/owned vehicle `traverseAcceleration` values.
+- `GET /players/me/statistics` - JWT required; aggregates the current player's persisted `MatchParticipant` history into overall battles/wins/losses/draws, win rate, kills, damage, reward totals, current account values, and per-played-vehicle statistics.
 - `PUT /players/me/active/{vehicleId}` - JWT required; sets active owned vehicle.
 - `GET /user-vehicles/me` - JWT required; returns free XP, owned vehicles, and each vehicle's `traverseAcceleration`.
 - `PUT /user-vehicles/me/active/{vehicleId}` - JWT required; sets active owned vehicle.
-- `POST /user-vehicles/me/buy/{code}` - JWT required; buys researched vehicle by catalog code using Bolts.
+- `POST /user-vehicles/me/buy/{code}` - JWT required; buys a researched visible vehicle by catalog code using Bolts; hidden development-tree vehicles return `400`.
 - `POST /user-vehicles/me/sell/{vehicleId}` - JWT required; sells owned vehicle for half purchase cost.
-- `POST /user-vehicles/research/{vehicleId}` - JWT required; unlocks a vehicle, spending predecessor XP when required.
-- `POST /user-vehicles/me/add-by-code/{code}` - JWT required; debug/free add by code.
+- `POST /user-vehicles/research/{vehicleId}` - JWT required; unlocks a visible vehicle, spending predecessor XP when required; hidden development-tree vehicles return `400`.
+- `POST /user-vehicles/me/add-by-code/{code}` - JWT required; debug/free add by code for visible vehicles; hidden development-tree vehicles return `400`.
 - `DELETE /user-vehicles/me/{vehicleId}` - JWT required; removes owned vehicle without refund.
 - `GET /user-vehicles/xp` - JWT required; returns owned vehicle XP, `traverseAcceleration`, and free XP.
 - `POST /user-vehicles/{vehicleId}/convert-freexp` - JWT required; body `{ amount }`; moves free XP to an owned vehicle.
-- `GET /vehicles?faction=&branch=` - public; vehicle catalog filter, including `traverseAcceleration`.
+- `GET /vehicles?faction=&branch=` - public; vehicle catalog filter, including `traverseAcceleration` and `isVisible`; hidden development-tree vehicles are included.
 - `GET /vehicles/{id}` - public; vehicle details, including `traverseAcceleration`.
 - `GET /vehicles/by-code/{code}` - public; vehicle details by code, including `traverseAcceleration`.
 - `GET /vehicles/{id}/research-from` - public; predecessor requirements for successor vehicle.
 - `POST /vehicles/links` - public; creates tech tree link.
 - `DELETE /vehicles/links/{id}` - public; deletes tech tree link.
-- `GET /vehicles/graph?faction=` - public; tech tree nodes, including `traverseAcceleration`, and edges.
+- `GET /vehicles/graph?faction=` - public; visible and hidden tech tree nodes, including `traverseAcceleration` and `isVisible`, plus edges.
 - `POST /matches/start` - JWT required; body `{ map }`; creates match.
 - `POST /matches/{matchId}/end` - JWT required; submits participants, awards progression, and returns `{ ok, participants }` with each participant's submitted stats and exact `xpEarned`, `bolts`, `freeXp`, `mmrDelta`, and `rewardsCalculated` flag.
 - `GET /matches/{matchId}/participants` - JWT required; lists the same stored participant-result fields. A `rewardsCalculated: false` item has no authoritative per-match currency breakdown and must not be displayed as a zero reward.
@@ -62,4 +63,5 @@ The API uses attribute-routed controllers plus a few minimal admin routes. JSON 
 
 ## Notes For Future Changes
 - Public route changes require updating this file and the matching domain doc.
+- `/players/me/statistics` is read-only and current-user scoped; it does not create an aggregate table because `MatchParticipant` is the source of truth.
 - Several mutating catalog/admin routes are currently public; changing auth behavior requires updating `authentication-authorization.md`.

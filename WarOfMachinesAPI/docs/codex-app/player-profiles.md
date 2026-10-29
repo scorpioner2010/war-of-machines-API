@@ -5,6 +5,7 @@ Authenticated players can read their own profile and set an active owned vehicle
 
 ## Owner Files
 - `Controllers/PlayersController.cs` - `GET /players/me`, `PUT /players/me/active/{vehicleId}`, profile DTOs.
+- `Controllers/PlayersController.cs` - `GET /players/me/statistics` aggregates the current player's persisted match history into an overall profile and per-vehicle statistics.
 - `Models/Player.cs` - player identity, admin flag, MMR, Bolts, Adamant, Free XP, owned vehicle navigation.
 - `Models/UserVehicle.cs` - ownership, active flag, per-vehicle XP.
 - `Models/UserVehicleResearch.cs` - researched vehicle unlock records.
@@ -20,6 +21,7 @@ Authenticated players can read their own profile and set an active owned vehicle
 
 ## Routes / Contracts
 - `GET /players/me` returns profile fields including `id`, `username`, `isAdmin`, `mmr`, `bolts`, `adamant`, `freeXp`, `activeVehicleTraverseAcceleration`, owned-vehicle `traverseAcceleration`, and `researchedVehicles`.
+- `GET /players/me/statistics` returns the current player's account snapshot plus overall match totals and a `vehicles` array aggregated from `MatchParticipants`; it returns an empty array and zero totals when the player has no completed history.
 - `PUT /players/me/active/{vehicleId}` returns `{ ok = true, activeVehicleId }` or `404` when the user does not own the vehicle.
 
 ## Tests
