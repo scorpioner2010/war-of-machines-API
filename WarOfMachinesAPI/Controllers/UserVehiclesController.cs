@@ -50,6 +50,7 @@ namespace WarOfMachines.Controllers
                     VehicleCode = x.Vehicle != null ? x.Vehicle.Code : string.Empty,
                     VehicleName = x.Vehicle != null ? x.Vehicle.Name : string.Empty,
                     ShellSpeed = x.Vehicle != null ? x.Vehicle.ShellSpeed : 0f,
+                    EnginePower = x.Vehicle != null ? x.Vehicle.EnginePower : 0f,
                     TraverseAcceleration = x.Vehicle != null ? x.Vehicle.TraverseAcceleration : 0f,
                     TurretTraverseSpeed = x.Vehicle != null ? x.Vehicle.TurretTraverseSpeed : 0f,
                     ViewRange = x.Vehicle != null ? x.Vehicle.ViewRange : 0f,
@@ -489,6 +490,7 @@ namespace WarOfMachines.Controllers
                     x.VehicleId,
                     VehicleName = x.Vehicle != null ? x.Vehicle.Name : "",
                     ShellSpeed = x.Vehicle != null ? x.Vehicle.ShellSpeed : 0f,
+                    EnginePower = x.Vehicle != null ? x.Vehicle.EnginePower : 0f,
                     TraverseAcceleration = x.Vehicle != null ? x.Vehicle.TraverseAcceleration : 0f,
                     TurretTraverseSpeed = x.Vehicle != null ? x.Vehicle.TurretTraverseSpeed : 0f,
                     ViewRange = x.Vehicle != null ? x.Vehicle.ViewRange : 0f,
@@ -643,6 +645,7 @@ namespace WarOfMachines.Controllers
             public string VehicleCode { get; set; } = string.Empty;
             public string VehicleName { get; set; } = string.Empty;
             public float ShellSpeed { get; set; }
+            public float EnginePower { get; set; }
             public float TraverseAcceleration { get; set; }
             public float TurretTraverseSpeed { get; set; }
             public float ViewRange { get; set; }

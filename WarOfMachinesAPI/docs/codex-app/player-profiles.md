@@ -1,7 +1,7 @@
 # Player Profiles
 
 ## Current Behavior
-Authenticated players can read their own profile and set an active owned vehicle. The profile response includes account flags, currencies, active vehicle identity/stats, owned vehicles with XP and research status, and researched vehicle list. Active and owned vehicle responses expose `traverseAcceleration`, which controls how quickly hull rotation reaches its maximum turn speed. Active vehicle changes are transactional and clear the previous active vehicle before setting the new one to avoid the filtered unique active-vehicle index.
+Authenticated players can read their own profile and set an active owned vehicle. The profile response includes account flags, currencies, active vehicle identity/stats, owned vehicles with XP and research status, and researched vehicle list. Active and owned vehicle responses expose `enginePower` and `traverseAcceleration`; `traverseAcceleration` controls how quickly hull rotation reaches its maximum turn speed. Active vehicle changes are transactional and clear the previous active vehicle before setting the new one to avoid the filtered unique active-vehicle index.
 
 ## Owner Files
 - `Controllers/PlayersController.cs` - `GET /players/me`, `PUT /players/me/active/{vehicleId}`, profile DTOs.
@@ -20,7 +20,7 @@ Authenticated players can read their own profile and set an active owned vehicle
 - EF Core execution strategy and transaction are used when switching active vehicle.
 
 ## Routes / Contracts
-- `GET /players/me` returns profile fields including `id`, `username`, `isAdmin`, `mmr`, `bolts`, `adamant`, `freeXp`, `activeVehicleTraverseAcceleration`, owned-vehicle `traverseAcceleration`, and `researchedVehicles`.
+- `GET /players/me` returns profile fields including `id`, `username`, `isAdmin`, `mmr`, `bolts`, `adamant`, `freeXp`, `activeVehicleEnginePower`, `activeVehicleTraverseAcceleration`, owned-vehicle `enginePower`/`traverseAcceleration`, and `researchedVehicles`.
 - `GET /players/me/statistics` returns the current player's account snapshot plus overall match totals and a `vehicles` array aggregated from `MatchParticipants`; it returns an empty array and zero totals when the player has no completed history.
 - `PUT /players/me/active/{vehicleId}` returns `{ ok = true, activeVehicleId }` or `404` when the user does not own the vehicle.
 
