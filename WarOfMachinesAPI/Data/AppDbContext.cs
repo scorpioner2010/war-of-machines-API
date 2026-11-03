@@ -55,12 +55,16 @@ namespace WarOfMachines.Data
             modelBuilder.Entity<Vehicle>()
                 .Property(v => v.ViewRange)
                 .HasDefaultValue(100f);
+            modelBuilder.Entity<Vehicle>()
+                .Property(v => v.EnginePower)
+                .HasDefaultValue(1f);
 
             modelBuilder.Entity<Vehicle>()
                 .ToTable(t =>
                 {
                     t.HasCheckConstraint("CK_Vehicles_ShellSpeed_Positive", "\"ShellSpeed\" > 0");
                     t.HasCheckConstraint("CK_Vehicles_ViewRange_Positive", "\"ViewRange\" > 0");
+                    t.HasCheckConstraint("CK_Vehicles_EnginePower_Positive", "\"EnginePower\" > 0");
                     t.HasCheckConstraint("CK_Vehicles_ShellsCount_NonNegative", "\"ShellsCount\" >= 0");
                     t.HasCheckConstraint("CK_Vehicles_DamageMin_LessOrEqual_DamageMax", "\"DamageMin\" <= \"DamageMax\"");
                 });

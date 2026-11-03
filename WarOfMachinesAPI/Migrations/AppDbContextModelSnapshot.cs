@@ -295,6 +295,11 @@ namespace WarOfMachines.Migrations
                         .HasColumnType("real")
                         .HasDefaultValue(90f);
 
+                    b.Property<float>("EnginePower")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("real")
+                        .HasDefaultValue(1f);
+
                     b.Property<int>("FactionId")
                         .HasColumnType("integer");
 
@@ -375,6 +380,8 @@ namespace WarOfMachines.Migrations
                     b.ToTable("Vehicles", t =>
                         {
                             t.HasCheckConstraint("CK_Vehicles_DamageMin_LessOrEqual_DamageMax", "\"DamageMin\" <= \"DamageMax\"");
+
+                            t.HasCheckConstraint("CK_Vehicles_EnginePower_Positive", "\"EnginePower\" > 0");
 
                             t.HasCheckConstraint("CK_Vehicles_ShellSpeed_Positive", "\"ShellSpeed\" > 0");
 
