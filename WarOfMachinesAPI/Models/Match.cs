@@ -14,10 +14,17 @@ namespace WarOfMachines.Models
         [Required]
         public string Map { get; set; } = string.Empty;
 
+        [Required]
+        [MaxLength(64)]
+        public string DedicatedServerId { get; set; } = string.Empty;
+
         // Час старту/завершення бою (UTC)
         [Required]
         public DateTimeOffset StartedAt { get; set; } = DateTimeOffset.UtcNow;
 
         public DateTimeOffset? EndedAt { get; set; }
+
+        [ConcurrencyCheck]
+        public int Version { get; set; }
     }
 }

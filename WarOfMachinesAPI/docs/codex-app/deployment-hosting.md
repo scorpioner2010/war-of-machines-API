@@ -1,36 +1,28 @@
 # Deployment Hosting
 
-## Current Behavior
-The repository contains one ASP.NET Core project and one solution. It runs as a .NET 8 web app, serves static files from `wwwroot`, exposes Swagger at `/swagger`, redirects `/` to `/admin`, and auto-applies EF Core migrations plus seed data during startup. Local launch profiles target `/admin`.
+## Поточний порядок
+Проєкт — .NET 8 ASP.NET Core API з PostgreSQL. Production запуск не повинен автоматично застосовувати міграції або seed: базова конфігурація має `Database:ApplyMigrationsOnStartup=false` і `Database:RunSeedOnStartup=false`. Міграція `20261119085129_SecurityHardeningFoundation` застосовується окремо після review у контрольованій БД.
 
-## Owner Files
-- `WarOfMachines-api.sln` - single solution containing `WarOfMachinesAPI.csproj`.
-- `WarOfMachinesAPI.csproj` - .NET 8 web project and package references.
-- `Program.cs` - runtime pipeline, static files, Swagger, startup migration/seed, root/admin routes.
-- `Properties/launchSettings.json` - local HTTP, HTTPS, and IIS Express profiles.
-- `appsettings.Production.json` - production logging levels and `AllowedHosts`.
-- `.env.local.example` - local environment template.
-- `wwwroot/admin/index.html` and `wwwroot/admin/logs.html` - static admin assets.
+## Обов'язкові secrets/config
+- `Jwt__Key` — випадковий signing key не менше 32 байт; production rotation виконується окремою погодженою процедурою.
+- `Jwt__Issuer`, `Jwt__Audience` — стабільні значення для конкретного середовища.
+- `DATABASE_URL` або `ConnectionStrings__DefaultConnection` — production PostgreSQL з TLS-параметрами провайдера.
+- `DedicatedServers__Provisioned__*` — bootstrap identity server-ів; credentials не зберігати в Git.
+- `ForwardedHeaders__KnownProxies__*` — реальні reverse-proxy IP, якщо API працює за proxy.
+- `Cors__AllowedOrigins__*` — лише потрібні браузерні origins; Unity не використовує CORS для auth.
+- `Swagger__Enabled=false` у production.
 
-## Important Configuration
-- `ASPNETCORE_ENVIRONMENT` - launch profiles set `Development`.
-- `ASPNETCORE_URLS` - optional in `.env.local.example`.
-- `DATABASE_URL` or `ConnectionStrings__DefaultConnection` - required for startup.
-- `Jwt__Key` - required for startup.
-- `AllowedHosts` - currently `*`.
+## HTTPS і proxy
+Production API має бути доступний клієнтам лише через HTTPS. Unity production build приймає лише allowlisted HTTPS API host і не має HTTP fallback. Reverse proxy повинен завершувати TLS, передавати proto/for тільки з довіреного proxy та не дозволяти прямий internet HTTP ingress до API. `ForwardedHeaders:KnownProxies` не можна залишати порожнім у deployment, де потрібна proxy-aware схема.
 
-## Dependencies
-- Runtime packages: BCrypt, EF Core Tools, JWT bearer auth, Npgsql EF Core provider, Swashbuckle, JWT token library.
-- PostgreSQL must be reachable during startup because migration and seed run before the app finishes starting.
-- Static admin files must exist under `wwwroot/admin` for `/admin` and `/admin/logs`.
+## Порядок deployment
+1. Provision secrets і Dedicated Server credentials через secret manager.
+2. Перевірити backup/rollback plan та застосувати additive EF migration до staging.
+3. Deploy API з migrations/seed switches disabled або виконати migration окремою job.
+4. Перевірити JWT issuer/audience, HTTPS, rate limit, admin policy, server register/heartbeat і ticket replay.
+5. Deploy сумісні Unity Client/Dedicated Server builds із DTLS certificate secrets.
+6. Увімкнути server registry credentials і перевірити reconnect/heartbeat expiration.
+7. Лише після smoke/regression перевірок допустити public test traffic.
 
-## Routes / Contracts
-- `/swagger` is exposed in all environments by current `Program.cs`.
-- `/admin` and `/admin/logs` are public static/minimal routes.
-
-## Tests
-- No automated deployment or smoke tests were found.
-
-## Notes For Future Changes
-- Changing auto-migrate/seed startup behavior requires updating `database-ef-core.md` and `startup-and-di.md`.
-- Adding Docker, reverse proxy, cloud hosting, health checks, or environment-specific Swagger behavior should update this file.
+## Обмеження
+Production deployment, ротація реальних ключів і production DB migration цим task не виконувалися. `/admin` і Swagger потребують окремого network access control, навіть якщо вони role-protected.

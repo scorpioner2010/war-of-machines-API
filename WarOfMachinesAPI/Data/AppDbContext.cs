@@ -13,6 +13,9 @@ namespace WarOfMachines.Data
         public DbSet<UserVehicleResearch> UserVehicleResearches => Set<UserVehicleResearch>();
         public DbSet<Match> Matches => Set<Match>();
         public DbSet<MatchParticipant> MatchParticipants => Set<MatchParticipant>();
+        public DbSet<DedicatedServer> DedicatedServers => Set<DedicatedServer>();
+        public DbSet<UserSession> UserSessions => Set<UserSession>();
+        public DbSet<ConnectionTicket> ConnectionTickets => Set<ConnectionTicket>();
         public DbSet<Faction> Factions => Set<Faction>();
         public DbSet<Map> Maps => Set<Map>();
 
@@ -131,11 +134,39 @@ namespace WarOfMachines.Data
                 .OnDelete(DeleteBehavior.Restrict);
 
             // MatchParticipant
+            modelBuilder.Entity<DedicatedServer>()
+                .HasIndex(server => server.LastHeartbeatUtc);
+
+            modelBuilder.Entity<DedicatedServer>()
+                .Property(server => server.ServerId)
+                .IsRequired();
+
+            modelBuilder.Entity<DedicatedServer>()
+                .Property(server => server.CredentialHash)
+                .IsRequired();
+
+            modelBuilder.Entity<UserSession>()
+                .HasIndex(session => session.RefreshTokenHash)
+                .IsUnique();
+
+            modelBuilder.Entity<UserSession>()
+                .HasIndex(session => new { session.UserId, session.RevokedAtUtc });
+
+            modelBuilder.Entity<ConnectionTicket>()
+                .HasIndex(ticket => ticket.TokenHash)
+                .IsUnique();
+
+            modelBuilder.Entity<ConnectionTicket>()
+                .HasIndex(ticket => new { ticket.ServerId, ticket.ExpiresAtUtc, ticket.RedeemedAtUtc });
+
             modelBuilder.Entity<MatchParticipant>()
                 .HasOne(mp => mp.Match)
                 .WithMany()
                 .HasForeignKey(mp => mp.MatchId)
                 .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Match>()
+                .HasIndex(match => new { match.DedicatedServerId, match.EndedAt });
 
             modelBuilder.Entity<MatchParticipant>()
                 .HasOne(mp => mp.User)
@@ -148,6 +179,10 @@ namespace WarOfMachines.Data
                 .WithMany()
                 .HasForeignKey(mp => mp.VehicleId)
                 .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<MatchParticipant>()
+                .HasIndex(mp => new { mp.MatchId, mp.UserId })
+                .IsUnique();
 
             // Map
             modelBuilder.Entity<Map>()

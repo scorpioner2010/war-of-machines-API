@@ -1,7 +1,7 @@
 # API Endpoints
 
 ## Current Behavior
-The API uses attribute-routed controllers plus a few minimal admin routes. JSON output is camelCase and ignores null values. JWT auth protects most player/progression routes; catalog, maps, auth, Unity server status, Swagger, and admin pages are public.
+The API uses attribute-routed controllers plus protected minimal admin routes. JSON output is camelCase and ignores null values. Player JWT, Dedicated Server credentials, and admin role policies are separate. `GET /unity-server/status` remains public for discovery; server mutations and match mutations are server-only.
 
 ## Owner Files
 - `Program.cs` - maps controllers, root redirect, admin minimal routes, Swagger UI.
@@ -9,24 +9,28 @@ The API uses attribute-routed controllers plus a few minimal admin routes. JSON 
 - `Controllers/PlayersController.cs` - `/players` authenticated profile, live history statistics, and active vehicle routes.
 - `Controllers/UserVehiclesController.cs` - `/user-vehicles` authenticated ownership, research, purchase, sell, XP routes.
 - `Controllers/VehiclesController.cs` - `/vehicles` catalog and tech tree link routes.
-- `Controllers/MatchesController.cs` - `/matches` authenticated match start/end/history routes.
+- `Controllers/MatchesController.cs` - `/matches` server-only match start/end and authenticated participant history.
+- `Controllers/ConnectionTicketsController.cs` - player ticket issue and server-only ticket redemption.
 - `Controllers/MapsController.cs` - `/maps` public map listing.
 - `Controllers/LeaderboardController.cs` - `/leaderboard` authenticated rankings.
-- `Controllers/UnityServerStatusController.cs` - `/unity-server` public heartbeat/status routes.
+- `Controllers/UnityServerStatusController.cs` - PostgreSQL-backed server register/heartbeat/unregister and public discovery.
 
 ## Important Configuration
 - `Jwt:Key` - required for protected endpoints.
-- CORS policy `any` - public cross-origin access for all methods/headers.
-- Swagger is always enabled at `/swagger`.
+- `Cors:AllowedOrigins` - explicit browser origins; empty by default.
+- Swagger is available only in Development or when `Swagger:Enabled=true`.
+- Login/register/refresh use the built-in `auth` rate-limit policy (10 requests/IP/minute).
 
 ## Dependencies
-- Controllers depend directly on `AppDbContext` except `UnityServerStatusController`, which depends on `UnityServerStatusStore`.
+- Controllers depend directly on `AppDbContext`; server auth uses `DedicatedServerCredentialValidator` and ticket redemption uses `JwtTokenService`.
 - `[ApiController]` provides automatic model binding behavior for controller actions.
 - `[Authorize]` is set at controller level for players, user vehicles, matches, and leaderboard.
 
 ## Routes / Contracts
-- `POST /auth/register` - anonymous; body `{ username, password }`; creates a player with `5,000` free XP, `50,000` Bolts, starter vehicle/research, and returns `{ token }`.
-- `POST /auth/login` - anonymous; body `{ username, password }`; verifies password, auto-heals starter vehicle, returns `{ token }`.
+- `POST /auth/register` - anonymous/rate-limited; body `{ username, password }`; requires a 3–32 character username and an 8–128 character password, creates a player with starter state, and returns `{ token, refreshToken, expiresAtUtc }`.
+- `POST /auth/login` - anonymous/rate-limited; body `{ username, password }`; accepts existing 1–32 character usernames for legacy account compatibility and a 1–128 character password, then returns the same session response.
+- `POST /auth/refresh` - anonymous/rate-limited; rotates an opaque refresh token and returns a new access/refresh pair.
+- `POST /auth/logout` - current player JWT; revokes the persisted session.
 - `GET /players/me` - JWT required; returns player currencies, active vehicle, owned vehicles, researched vehicles, and active/owned vehicle `enginePower` and `traverseAcceleration` values.
 - `GET /players/me/statistics` - JWT required; aggregates the current player's persisted `MatchParticipant` history into overall battles/wins/losses/draws, win rate, kills, damage, reward totals, current account values, and per-played-vehicle statistics.
 - `PUT /players/me/active/{vehicleId}` - JWT required; sets active owned vehicle.
@@ -43,25 +47,26 @@ The API uses attribute-routed controllers plus a few minimal admin routes. JSON 
 - `GET /vehicles/{id}` - public; vehicle details, including `enginePower` and `traverseAcceleration`.
 - `GET /vehicles/by-code/{code}` - public; vehicle details by code, including `enginePower` and `traverseAcceleration`.
 - `GET /vehicles/{id}/research-from` - public; predecessor requirements for successor vehicle.
-- `POST /vehicles/links` - public; creates tech tree link.
-- `DELETE /vehicles/links/{id}` - public; deletes tech tree link.
+- `POST /vehicles/links` - admin policy required; creates tech tree link.
+- `DELETE /vehicles/links/{id}` - admin policy required; deletes tech tree link.
 - `GET /vehicles/graph?faction=` - public; visible and hidden tech tree nodes, including `enginePower`, `traverseAcceleration`, and `isVisible`, plus edges.
-- `POST /matches/start` - JWT required; body `{ map }`; creates match.
-- `POST /matches/{matchId}/end` - JWT required; submits participants, awards progression, and returns `{ ok, participants }` with each participant's submitted stats and exact `xpEarned`, `bolts`, `freeXp`, `mmrDelta`, and `rewardsCalculated` flag.
+- `POST /matches/start` - Dedicated Server policy required; body `{ map, participants: [{ userId, vehicleId, team }] }`; the API validates users/owned vehicles and binds the match to the authenticated server.
+- `POST /matches/{matchId}/end` - Dedicated Server policy required; server ownership and the stored roster are checked, rewards are transactional, and repeated calls return the already-finalized result without double rewards.
 - `GET /matches/{matchId}/participants` - JWT required; lists the same stored participant-result fields. A `rewardsCalculated: false` item has no authoritative per-match currency breakdown and must not be displayed as a zero reward.
 - `GET /maps` - public; lists maps.
 - `GET /leaderboard/mmr?top=10` - JWT required; top players by MMR.
 - `GET /leaderboard/free-xp?top=10` - JWT required; top players by free XP.
 - `GET /leaderboard/vehicle-xp?top=10` - JWT required; top user vehicles by XP.
-- `GET /unity-server/status` - public; returns current Unity server status.
-- `POST /unity-server/status` - public; updates Unity server heartbeat/status.
-- `GET /`, `GET /admin`, `GET /admin/logs`, `GET /admin/logs/stream`, `GET /admin/logs/snapshot`, `POST /admin/logs/clear` - public admin/minimal routes.
+- `GET /unity-server/status` - anonymous; returns registered servers whose heartbeat is within `DedicatedServers:HeartbeatTimeoutSeconds`.
+- `POST /unity-server/register` - Dedicated Server policy; creates/updates only the authenticated server record.
+- `PUT /unity-server/{serverId}/heartbeat` - Dedicated Server policy; route id must match the authenticated server id.
+- `POST /unity-server/{serverId}/unregister` - Dedicated Server policy; marks only the authenticated server offline.
+- `GET /`, `GET /admin`, `GET /admin/logs`, `GET /admin/logs/stream`, `GET /admin/logs/snapshot`, `POST /admin/logs/clear` - admin role required.
 
 ## Tests
-- No automated API tests were found.
-- `WarOfMachines-api.http` contains manual register/login examples only.
+- No checked-in test project exists. Local integration smoke checks cover the security-sensitive contracts and are listed in `SECURITY_HARDENING_REPORT.md`.
 
 ## Notes For Future Changes
 - Public route changes require updating this file and the matching domain doc.
 - `/players/me/statistics` is read-only and current-user scoped; it does not create an aggregate table because `MatchParticipant` is the source of truth.
-- Several mutating catalog/admin routes are currently public; changing auth behavior requires updating `authentication-authorization.md`.
+- Unity is not a browser client; CORS is not an authentication mechanism. Keep server credentials and player tokens on their intended sides of the contract.

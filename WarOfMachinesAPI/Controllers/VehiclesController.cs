@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WarOfMachines.Data;
@@ -191,6 +192,7 @@ namespace WarOfMachines.Controllers
 
         // POST /vehicles/links
         [HttpPost("links")]
+        [Authorize(Policy = "admin")]
         public IActionResult CreateLink([FromBody] CreateLinkDto dto)
         {
             if (dto.PredecessorVehicleId == dto.SuccessorVehicleId)
@@ -222,6 +224,7 @@ namespace WarOfMachines.Controllers
 
         // DELETE /vehicles/links/{id}
         [HttpDelete("links/{id:int}")]
+        [Authorize(Policy = "admin")]
         public IActionResult DeleteLink(int id)
         {
             var link = _db.VehicleResearchRequirements.FirstOrDefault(x => x.Id == id);
