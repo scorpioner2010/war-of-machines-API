@@ -34,8 +34,8 @@ Seeded vehicle combat stats are owned by `Data/SeedData.cs` and are written idem
 - `GET /vehicles?faction=iron_alliance&branch=tracked` returns catalog DTOs, including `enginePower`, `traverseAcceleration`, and `isVisible`; hidden catalog robots are intentionally included.
 - `GET /vehicles/{id:int}` and `GET /vehicles/by-code/{code}` return a vehicle DTO, including `enginePower` and `traverseAcceleration`, or `404`.
 - `GET /vehicles/{id:int}/research-from` returns predecessor IDs and required XP for a successor.
-- `POST /vehicles/links` creates a research link and rejects self-links, missing vehicles, and duplicates.
-- `DELETE /vehicles/links/{id:int}` deletes a research link.
+- `POST /vehicles/links` creates a research link for an authenticated admin and rejects self-links, missing vehicles, and duplicates.
+- `DELETE /vehicles/links/{id:int}` deletes a research link for an authenticated admin.
 - `GET /vehicles/graph?faction=iron_alliance` returns visible and hidden `nodes`, including `enginePower`, `traverseAcceleration`, and `isVisible`, plus `edges` for the development tree.
 - `GET /user-vehicles/me` and `GET /user-vehicles/xp` return owned vehicle XP/research state, `enginePower`, `traverseAcceleration`, and player Free XP.
 - `PUT /user-vehicles/me/active/{vehicleId:int}` sets active owned vehicle transactionally.
@@ -51,5 +51,5 @@ Seeded vehicle combat stats are owned by `Data/SeedData.cs` and are written idem
 
 ## Notes For Future Changes
 - Keep active vehicle changes compatible with `IX_UserVehicles_UserId_IsActive`; clear old active state before setting new active state.
-- `POST /vehicles/links` and `DELETE /vehicles/links/{id}` are currently public; add docs/tests if auth is introduced.
+- Vehicle link mutations require the `admin` policy; normal player JWTs cannot change the research graph.
 - Update `database-ef-core.md` whenever vehicle stats, research relationships, indexes, or seed data change.

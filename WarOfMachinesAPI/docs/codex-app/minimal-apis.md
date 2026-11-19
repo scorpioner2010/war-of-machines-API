@@ -1,7 +1,7 @@
 # Admin Minimal APIs
 
 ## Current Behavior
-The app serves static admin HTML from `wwwroot/admin` and maps minimal routes for the admin landing page and log viewer. The root route redirects to `/admin`. Admin routes are public and do not require authentication. The logs page uses server-sent events to stream in-memory log entries.
+The app serves static admin HTML from `wwwroot/admin` and maps minimal routes for the admin landing page and log viewer. The root route redirects to `/admin`. All admin routes require the `admin` authorization policy. The logs page uses server-sent events to stream in-memory log entries.
 
 ## Owner Files
 - `Program.cs` - maps `/`, `/admin`, `/admin/logs`, `/admin/logs/stream`, `/admin/logs/snapshot`, `/admin/logs/clear`.
@@ -12,7 +12,7 @@ The app serves static admin HTML from `wwwroot/admin` and maps minimal routes fo
 ## Important Configuration
 - Static files are enabled by `app.UseStaticFiles()`.
 - Admin routes use `app.Environment.WebRootPath` or `AppContext.BaseDirectory/wwwroot` fallback to locate HTML files.
-- No auth, role check, CORS restriction, or anti-forgery is configured for admin routes.
+- Every admin route uses `.RequireAuthorization("admin")`; CORS is deny-by-default unless explicit origins are configured.
 
 ## Dependencies
 - `InMemoryLogStore` supplies log snapshots and deltas.
@@ -28,7 +28,7 @@ The app serves static admin HTML from `wwwroot/admin` and maps minimal routes fo
 - `POST /admin/logs/clear` clears the buffer, records a "Log buffer cleared." event, and returns `{ ok = true, cleared = true }`.
 
 ## Tests
-- No automated admin UI or minimal API tests were found.
+- No checked-in admin UI test project exists; local authorization smoke checks are listed in `SECURITY_HARDENING_REPORT.md`.
 
 ## Notes For Future Changes
 - If admin routes become protected, update auth, endpoint, and deployment docs.

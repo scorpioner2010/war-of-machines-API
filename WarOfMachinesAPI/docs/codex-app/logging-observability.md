@@ -30,5 +30,5 @@ The app has a static in-memory log store and admin routes for viewing it. Startu
 
 ## Notes For Future Changes
 - Registering `InMemoryLoggerProvider` globally would change runtime logging volume and memory use; document it before doing so.
-- Do not log secrets or PII. Auth registration currently logs the request object, so inspect before expanding auth logging.
+- Do not log secrets or PII. Auth logging records only the username; passwords, JWTs, refresh tokens, connection tickets and server credentials are excluded. Global exception logging records the path and exception server-side, while the client receives generic ProblemDetails.
 - Production performance investigations should first check available logs and database/provider diagnostics; tracing and health checks are not currently present.

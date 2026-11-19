@@ -36,6 +36,8 @@ namespace WarOfMachines.Models
         public int FreeXpEarned { get; set; } = 0;
         public int MmrDelta { get; set; } = 0;
 
+        public bool IsFinalized { get; set; }
+
         // Навігаційні властивості
         [ForeignKey(nameof(MatchId))]
         public Match? Match { get; set; }

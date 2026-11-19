@@ -1,31 +1,31 @@
-# Unity Server Status
+# Unity Dedicated Server Registry
 
-## Current Behavior
-Unity server status is stored in memory as the latest heartbeat snapshot. `GET /unity-server/status` returns offline when no heartbeat exists or when the last heartbeat is older than 6 seconds. `POST /unity-server/status` records a heartbeat, normalizes status text, address, and port, and returns receipt metadata. The admin landing page polls this endpoint.
+## Поточна поведінка
+Registry Dedicated Servers зберігається в PostgreSQL. Кожен сервер має стабільний `ServerId` і окремий credential. API перевіряє credential через окрему `DedicatedServer` authentication scheme; player JWT для цих операцій не підходить.
 
-## Owner Files
-- `Controllers/UnityServerStatusController.cs` - public status get/post routes, request address normalization, port validation.
-- `Infrastructure/UnityServerStatusStore.cs` - singleton in-memory status snapshot, offline threshold, heartbeat update.
-- `Program.cs` - registers `UnityServerStatusStore` as singleton.
-- `wwwroot/admin/index.html` - fetches `/unity-server/status`.
+`GET /unity-server/status` залишається anonymous для discovery і повертає лише зареєстровані сервери з heartbeat у межах `DedicatedServers:HeartbeatTimeoutSeconds`. API restart не стирає registry, а неактивні записи автоматично виключаються з відповіді.
 
-## Important Configuration
-- No appsettings-backed configuration exists for this system.
-- Offline threshold is hard-coded to 6 seconds in `UnityServerStatusStore`.
-- Routes are public and do not require JWT auth.
+## Власники
+- `Controllers/UnityServerStatusController.cs` — register, heartbeat, unregister і discovery.
+- `Infrastructure/DedicatedServerAuthenticationHandler.cs` — server-only headers/policy.
+- `Infrastructure/DedicatedServerCredentialValidator.cs` — hash validation і bootstrap provisioning.
+- `Models/DedicatedServer.cs` — persisted identity, address, capacity, activity та heartbeat.
+- `Data/AppDbContext.cs` — PostgreSQL mapping/indexes.
 
-## Dependencies
-- `UnityServerStatusStore` uses a lock around the latest snapshot.
-- Address fallback reads `X-Forwarded-For`, then `X-Real-IP`, then `HttpContext.Connection.RemoteIpAddress`.
-- Valid port range is 1 through 65535; invalid ports are stored as `null`.
+## Конфігурація
+- `DedicatedServers:Provisioned` — початковий список `ServerId` + credential у захищеній конфігурації. Реальні credentials не комітяться.
+- `DedicatedServers:HeartbeatTimeoutSeconds` — expiration в discovery; допустимий діапазон 5–300 секунд.
+- `X-Server-Id` і `X-Server-Credential` — обов'язкові headers для server mutations.
+- Address береться з body сервера, а не з `X-Forwarded-For`; forwarded headers приймаються тільки від `ForwardedHeaders:KnownProxies`.
 
-## Routes / Contracts
-- `GET /unity-server/status` returns `UnityServerStatusSnapshot` fields: `isOnline`, `status`, `address`, `port`, `lastHeartbeatUtc`, `secondsSinceHeartbeat`, `playersOnline`, `maxPlayers`, `activeMatches`, `message`.
-- `POST /unity-server/status` accepts optional `status`, `address`, `port`, `playersOnline`, `maxPlayers`, `activeMatches`, `message`; returns `{ ok, receivedAtUtc, isOnline }`.
+## Контракти
+- `POST /unity-server/register` — server policy; сервер може створити/оновити лише власний запис. Body: `{ region, address, port, maxPlayers }`.
+- `PUT /unity-server/{serverId}/heartbeat` — server policy; route `serverId` мусить збігатися з authenticated server claim. Body містить address, port, players, capacity, active matches, status і message.
+- `POST /unity-server/{serverId}/unregister` — server policy; позначає власний запис offline.
+- `GET /unity-server/status` — anonymous; повертає `{ servers: [...] }` з `serverId`, region, address, port, capacity, players, active matches і last heartbeat.
 
-## Tests
-- No automated Unity server status tests were found.
+## Безпека
+Credential у PostgreSQL зберігається лише як SHA-256 verification hash; порівняння виконується constant-time. Сервер не може heartbeat/unregister чужий `ServerId`. Public discovery не приймає update payload.
 
-## Notes For Future Changes
-- Status is not persisted; process restart loses heartbeat state.
-- If this endpoint becomes trusted server-only input, update auth docs and add tests for forwarded address handling.
+## Перевірки
+Локально перевірені реєстрація, discovery, підроблений credential і heartbeat чужого server id. Повний dedicated runtime залежить від налаштування server environment variables.

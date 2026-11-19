@@ -6,6 +6,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using WarOfMachines.Data;
+using WarOfMachines.Infrastructure;
 using WarOfMachines.Models;
 
 namespace WarOfMachines.Controllers
@@ -50,24 +51,76 @@ namespace WarOfMachines.Controllers
             _db = db;
         }
 
-        private int CurrentUserId()
+        private string? CurrentDedicatedServerId()
         {
-            var idStr = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            return int.Parse(idStr);
+            return User.FindFirstValue(DedicatedServerAuthenticationHandler.ServerIdClaim);
         }
 
         // -------------------------------
         // POST /matches/start
         // -------------------------------
         [HttpPost("start")]
+        [Authorize(Policy = "dedicatedServer")]
         public IActionResult StartMatch([FromBody] StartMatchRequest req)
         {
+            string? serverId = CurrentDedicatedServerId();
+            if (string.IsNullOrWhiteSpace(serverId))
+            {
+                return Forbid();
+            }
+
+            if (req.Participants == null || req.Participants.Count == 0 || req.Participants.Count > 64)
+            {
+                return BadRequest("Authoritative participants are required.");
+            }
+
+            var duplicateUsers = req.Participants
+                .GroupBy(participant => participant.UserId)
+                .Where(group => group.Count() > 1)
+                .Select(group => group.Key)
+                .ToList();
+            if (duplicateUsers.Count > 0 || req.Participants.Any(participant => participant.UserId <= 0 || participant.VehicleId <= 0 || participant.Team <= 0))
+            {
+                return BadRequest("Invalid match roster.");
+            }
+
+            var userIds = req.Participants.Select(participant => participant.UserId).Distinct().ToList();
+            var users = _db.Players.Where(user => userIds.Contains(user.Id)).Select(user => user.Id).ToHashSet();
+            if (users.Count != userIds.Count)
+            {
+                return BadRequest("Match roster contains unknown users.");
+            }
+
+            var ownedVehicles = _db.UserVehicles
+                .Where(vehicle => userIds.Contains(vehicle.UserId))
+                .Select(vehicle => new { vehicle.UserId, vehicle.VehicleId })
+                .ToHashSet();
+            if (req.Participants.Any(participant => !ownedVehicles.Contains(new { participant.UserId, participant.VehicleId })))
+            {
+                return BadRequest("Match roster contains a vehicle not owned by its user.");
+            }
+
             var match = new Match
             {
                 Map = string.IsNullOrWhiteSpace(req.Map) ? "default_map" : req.Map,
-                StartedAt = DateTimeOffset.UtcNow
+                StartedAt = DateTimeOffset.UtcNow,
+                DedicatedServerId = serverId
             };
             _db.Matches.Add(match);
+
+            foreach (MatchRosterInput participant in req.Participants)
+            {
+                _db.MatchParticipants.Add(new MatchParticipant
+                {
+                    Match = match,
+                    UserId = participant.UserId,
+                    VehicleId = participant.VehicleId,
+                    Team = participant.Team,
+                    Result = "pending",
+                    IsFinalized = false
+                });
+            }
+
             _db.SaveChanges();
 
             return Ok(new { matchId = match.Id });
@@ -75,13 +128,25 @@ namespace WarOfMachines.Controllers
 
         public class StartMatchRequest
         {
+            [System.ComponentModel.DataAnnotations.StringLength(64)]
             public string Map { get; set; } = "default_map";
+
+            [System.ComponentModel.DataAnnotations.MaxLength(64)]
+            public List<MatchRosterInput> Participants { get; set; } = new();
+        }
+
+        public class MatchRosterInput
+        {
+            public int UserId { get; set; }
+            public int VehicleId { get; set; }
+            public int Team { get; set; }
         }
 
         // ---------------------------------------------
         // POST /matches/{matchId}/end
         // ---------------------------------------------
         [HttpPost("{matchId:int}/end")]
+        [Authorize(Policy = "dedicatedServer")]
         public IActionResult EndMatch(int matchId, [FromBody] EndMatchRequest req)
         {
             if (req == null || req.Participants == null || req.Participants.Count == 0)
@@ -90,9 +155,11 @@ namespace WarOfMachines.Controllers
             }
 
             var strategy = _db.Database.CreateExecutionStrategy();
-            return strategy.Execute<IActionResult>(() =>
+            try
             {
-                using var tx = _db.Database.BeginTransaction();
+                return strategy.Execute<IActionResult>(() =>
+                {
+                    using var tx = _db.Database.BeginTransaction();
 
                 var match = _db.Matches.FirstOrDefault(m => m.Id == matchId);
                 if (match == null)
@@ -101,17 +168,26 @@ namespace WarOfMachines.Controllers
                     return NotFound("Match not found.");
                 }
 
-                if (match.EndedAt != null)
+                if (!string.Equals(match.DedicatedServerId, CurrentDedicatedServerId(), StringComparison.Ordinal))
                 {
                     tx.Rollback();
-                    return BadRequest("Match already ended.");
+                    return Forbid();
                 }
 
-                bool alreadyHasParticipants = _db.MatchParticipants.Any(x => x.MatchId == matchId);
-                if (alreadyHasParticipants)
+                if (match.EndedAt != null)
+                {
+                    List<MatchParticipantResponse> existingResults = GetParticipantResponses(match.Id);
+                    tx.Commit();
+                    return Ok(new { ok = true, alreadyProcessed = true, participants = existingResults });
+                }
+
+                var roster = _db.MatchParticipants
+                    .Where(participant => participant.MatchId == matchId)
+                    .ToDictionary(participant => participant.UserId, participant => participant);
+                if (roster.Count == 0 || roster.Count != req.Participants.Count)
                 {
                     tx.Rollback();
-                    return Conflict("Results for this match were already submitted.");
+                    return BadRequest("Match results do not match the authoritative roster.");
                 }
 
                 var duplicateUsers = req.Participants
@@ -127,6 +203,12 @@ namespace WarOfMachines.Controllers
                 }
 
                 var userIds = req.Participants.Select(p => p.UserId).Distinct().ToList();
+                if (userIds.Any(userId => !roster.ContainsKey(userId)))
+                {
+                    tx.Rollback();
+                    return BadRequest("Match results contain an unknown participant.");
+                }
+
                 var users = _db.Players.Where(u => userIds.Contains(u.Id)).ToDictionary(u => u.Id, u => u);
 
                 var missingUsers = userIds.Where(id => !users.ContainsKey(id)).ToList();
@@ -152,6 +234,18 @@ namespace WarOfMachines.Controllers
                 foreach (var raw in req.Participants)
                 {
                     var user = users[raw.UserId];
+                    MatchParticipant rosterParticipant = roster[raw.UserId];
+                    if (rosterParticipant.VehicleId != raw.VehicleId || rosterParticipant.Team != raw.Team)
+                    {
+                        tx.Rollback();
+                        return BadRequest("Match results changed the authoritative participant roster.");
+                    }
+
+                    if (rosterParticipant.IsFinalized)
+                    {
+                        tx.Rollback();
+                        return Conflict("Match participant has already been finalized.");
+                    }
 
                     int kills = Math.Clamp(raw.Kills, MinKills, MaxKillsPerBattle);
                     int damage = Math.Clamp(raw.Damage, MinDamage, MaxDamagePerBattle);
@@ -189,28 +283,14 @@ namespace WarOfMachines.Controllers
                     int mmrDelta = (int)Math.Round(MmrK * (score - expected), MidpointRounding.AwayFromZero);
                     mmrDelta = Math.Clamp(mmrDelta, MmrCapLoss, MmrCapGain);
 
-                    bool existsForUser = _db.MatchParticipants.Any(x => x.MatchId == match.Id && x.UserId == raw.UserId);
-                    if (existsForUser)
-                    {
-                        tx.Rollback();
-                        return Conflict($"Results already submitted for user {raw.UserId} in this match.");
-                    }
-
-                    var mp = new MatchParticipant
-                    {
-                        MatchId = match.Id,
-                        UserId = raw.UserId,
-                        VehicleId = raw.VehicleId,
-                        Team = raw.Team,
-                        Result = result,
-                        Kills = kills,
-                        Damage = damage,
-                        XpEarned = xpTotal,
-                        BoltsEarned = bolts,
-                        FreeXpEarned = freeXp,
-                        MmrDelta = mmrDelta
-                    };
-                    _db.MatchParticipants.Add(mp);
+                    rosterParticipant.Result = result;
+                    rosterParticipant.Kills = kills;
+                    rosterParticipant.Damage = damage;
+                    rosterParticipant.XpEarned = xpTotal;
+                    rosterParticipant.BoltsEarned = bolts;
+                    rosterParticipant.FreeXpEarned = freeXp;
+                    rosterParticipant.MmrDelta = mmrDelta;
+                    rosterParticipant.IsFinalized = true;
 
                     // --- Оновлення прогресу ---
                     user.Mmr += mmrDelta;
@@ -225,12 +305,22 @@ namespace WarOfMachines.Controllers
                     }
                 }
 
-                _db.SaveChanges();
-                List<MatchParticipantResponse> participants = GetParticipantResponses(match.Id);
-                tx.Commit();
+                    match.Version++;
+                    _db.SaveChanges();
+                    List<MatchParticipantResponse> participants = GetParticipantResponses(match.Id);
+                    tx.Commit();
 
-                return Ok(new { ok = true, participants });
-            });
+                    return Ok(new { ok = true, participants });
+                });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Conflict("Match was finalized by another request.");
+            }
+            catch (DbUpdateException)
+            {
+                return Conflict("Match result could not be finalized.");
+            }
         }
 
         private static string NormalizeResult(string input)
