@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("WarOfMachines")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+f24f966f81923ca2d019cd0143fe831d941a64a4")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+906eab08cbc4f00e2f6473b3294c911847c64272")]
 [assembly: System.Reflection.AssemblyProductAttribute("WarOfMachines")]
 [assembly: System.Reflection.AssemblyTitleAttribute("WarOfMachines")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

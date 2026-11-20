@@ -298,7 +298,7 @@ namespace WarOfMachines.Data
 
                 HP = 100, ShellSpeed = 135f, ShellsCount = 118, DamageMin = 38.4f, DamageMax = 57.6f, Penetration = 102, ViewRange = 110f,
                 ReloadTime = 1.6f, Accuracy = 1.02f, AimTime = 1.45f,
-                Speed = 1.62f, Acceleration = 0.375f, EnginePower = 360f, TraverseAcceleration = 37.5f, TraverseSpeed = 62f, TurretTraverseSpeed = 56.95f,
+                Speed = 1.62f, Acceleration = 0.375f, EnginePower = 1360f, TraverseAcceleration = 37.5f, TraverseSpeed = 62f, TurretTraverseSpeed = 56.95f,
                 TurretArmorFront = 30, TurretArmorSide = 19, TurretArmorRear = 14,
                 HullArmorFront = 29, HullArmorSide = 18, HullArmorRear = 13,
                 IsVisible = true
@@ -315,7 +315,7 @@ namespace WarOfMachines.Data
                 PurchaseCost = 5000,
                 HP = 180, ShellSpeed = 150f, ShellsCount = 185, DamageMin = 28.8f, DamageMax = 43.2f, Penetration = 96, ViewRange = 130f,
                 ReloadTime = 1.0f, Accuracy = 0.8f, AimTime = 0.95f,
-                Speed = 1.86f, Acceleration = 0.4f, EnginePower = 420f, TraverseAcceleration = 40f, TraverseSpeed = 72f, TurretTraverseSpeed = 68f,
+                Speed = 1.86f, Acceleration = 0.4f, EnginePower = 1420f, TraverseAcceleration = 40f, TraverseSpeed = 72f, TurretTraverseSpeed = 68f,
                 TurretArmorFront = 48, TurretArmorSide = 30, TurretArmorRear = 21,
                 HullArmorFront = 43, HullArmorSide = 27, HullArmorRear = 19,
                 IsVisible = true
@@ -332,7 +332,7 @@ namespace WarOfMachines.Data
                 PurchaseCost = 9000,
                 HP = 250, ShellSpeed = 120f, ShellsCount = 75, DamageMin = 74.4f, DamageMax = 112.8f, Penetration = 119, ViewRange = 105f,
                 ReloadTime = 2.6f, Accuracy = 1.26f, AimTime = 2.05f,
-                Speed = 1.56f, Acceleration = 0.325f, EnginePower = 460f, TraverseAcceleration = 32.5f, TraverseSpeed = 66f, TurretTraverseSpeed = 60.35f,
+                Speed = 1.56f, Acceleration = 0.325f, EnginePower = 1460f, TraverseAcceleration = 32.5f, TraverseSpeed = 66f, TurretTraverseSpeed = 60.35f,
                 TurretArmorFront = 74, TurretArmorSide = 48, TurretArmorRear = 32,
                 HullArmorFront = 67, HullArmorSide = 45, HullArmorRear = 30,
                 IsVisible = true
@@ -349,7 +349,7 @@ namespace WarOfMachines.Data
                 PurchaseCost = 15000,
                 HP = 335, ShellSpeed = 99f, ShellsCount = 57, DamageMin = 100.8f, DamageMax = 151.2f, Penetration = 132, ViewRange = 90f,
                 ReloadTime = 3.5f, Accuracy = 1.81f, AimTime = 2.9f,
-                Speed = 1.26f, Acceleration = 0.275f, EnginePower = 520f, TraverseAcceleration = 27.5f, TraverseSpeed = 60f, TurretTraverseSpeed = 51.85f,
+                Speed = 1.26f, Acceleration = 0.275f, EnginePower = 1520f, TraverseAcceleration = 27.5f, TraverseSpeed = 60f, TurretTraverseSpeed = 51.85f,
                 TurretArmorFront = 106, TurretArmorSide = 70, TurretArmorRear = 48,
                 HullArmorFront = 94, HullArmorSide = 64, HullArmorRear = 45,
                 IsVisible = true
@@ -371,7 +371,7 @@ namespace WarOfMachines.Data
                 PurchaseCost = 22000,
                 HP = 220, ShellSpeed = 150f, ShellsCount = 205, DamageMin = 33.6f, DamageMax = 50.4f, Penetration = 104, ViewRange = 140f,
                 ReloadTime = 0.95f, Accuracy = 0.8f, AimTime = 0.85f,
-                Speed = 1.98f, Acceleration = 0.425f, EnginePower = 500f, TraverseAcceleration = 42.5f, TraverseSpeed = 76f, TurretTraverseSpeed = 72f,
+                Speed = 1.98f, Acceleration = 0.425f, EnginePower = 1500f, TraverseAcceleration = 42.5f, TraverseSpeed = 76f, TurretTraverseSpeed = 72f,
                 TurretArmorFront = 54, TurretArmorSide = 34, TurretArmorRear = 23,
                 HullArmorFront = 49, HullArmorSide = 31, HullArmorRear = 21,
                 IsVisible = false
@@ -388,7 +388,7 @@ namespace WarOfMachines.Data
                 PurchaseCost = 25000,
                 HP = 205, ShellSpeed = 150f, ShellsCount = 220, DamageMin = 30f, DamageMax = 45f, Penetration = 101, ViewRange = 145f,
                 ReloadTime = 0.85f, Accuracy = 0.8f, AimTime = 0.8f,
-                Speed = 2.1f, Acceleration = 0.45f, EnginePower = 510f, TraverseAcceleration = 45f, TraverseSpeed = 78f, TurretTraverseSpeed = 74f,
+                Speed = 2.1f, Acceleration = 0.45f, EnginePower = 1510f, TraverseAcceleration = 45f, TraverseSpeed = 78f, TurretTraverseSpeed = 74f,
                 TurretArmorFront = 50, TurretArmorSide = 32, TurretArmorRear = 22,
                 HullArmorFront = 46, HullArmorSide = 29, HullArmorRear = 20,
                 IsVisible = false
@@ -405,7 +405,7 @@ namespace WarOfMachines.Data
                 PurchaseCost = 47000,
                 HP = 275, ShellSpeed = 150f, ShellsCount = 235, DamageMin = 36f, DamageMax = 54f, Penetration = 110, ViewRange = 155f,
                 ReloadTime = 0.85f, Accuracy = 0.8f, AimTime = 0.75f,
-                Speed = 2.28f, Acceleration = 0.475f, EnginePower = 560f, TraverseAcceleration = 47.5f, TraverseSpeed = 82f, TurretTraverseSpeed = 78f,
+                Speed = 2.28f, Acceleration = 0.475f, EnginePower = 1560f, TraverseAcceleration = 47.5f, TraverseSpeed = 82f, TurretTraverseSpeed = 78f,
                 TurretArmorFront = 65, TurretArmorSide = 41, TurretArmorRear = 28,
                 HullArmorFront = 59, HullArmorSide = 38, HullArmorRear = 26,
                 IsVisible = false
@@ -422,7 +422,7 @@ namespace WarOfMachines.Data
                 PurchaseCost = 26000,
                 HP = 315, ShellSpeed = 132f, ShellsCount = 95, DamageMin = 90f, DamageMax = 135f, Penetration = 130, ViewRange = 115f,
                 ReloadTime = 2.4f, Accuracy = 1.15f, AimTime = 1.8f,
-                Speed = 1.74f, Acceleration = 0.36f, EnginePower = 540f, TraverseAcceleration = 36f, TraverseSpeed = 70f, TurretTraverseSpeed = 64f,
+                Speed = 1.74f, Acceleration = 0.36f, EnginePower = 1540f, TraverseAcceleration = 36f, TraverseSpeed = 70f, TurretTraverseSpeed = 64f,
                 TurretArmorFront = 94, TurretArmorSide = 60, TurretArmorRear = 40,
                 HullArmorFront = 84, HullArmorSide = 55, HullArmorRear = 37,
                 IsVisible = false
@@ -439,7 +439,7 @@ namespace WarOfMachines.Data
                 PurchaseCost = 35000,
                 HP = 420, ShellSpeed = 105f, ShellsCount = 62, DamageMin = 115.2f, DamageMax = 172.8f, Penetration = 142, ViewRange = 94f,
                 ReloadTime = 3.3f, Accuracy = 1.75f, AimTime = 2.65f,
-                Speed = 1.45f, Acceleration = 0.3f, EnginePower = 600f, TraverseAcceleration = 30f, TraverseSpeed = 56f, TurretTraverseSpeed = 48f,
+                Speed = 1.45f, Acceleration = 0.3f, EnginePower = 1600f, TraverseAcceleration = 30f, TraverseSpeed = 56f, TurretTraverseSpeed = 48f,
                 TurretArmorFront = 120, TurretArmorSide = 78, TurretArmorRear = 53,
                 HullArmorFront = 108, HullArmorSide = 70, HullArmorRear = 48,
                 IsVisible = false
@@ -456,7 +456,7 @@ namespace WarOfMachines.Data
                 PurchaseCost = 39000,
                 HP = 470, ShellSpeed = 99f, ShellsCount = 55, DamageMin = 129.6f, DamageMax = 194.4f, Penetration = 148, ViewRange = 88f,
                 ReloadTime = 3.6f, Accuracy = 1.9f, AimTime = 2.9f,
-                Speed = 1.34f, Acceleration = 0.285f, EnginePower = 630f, TraverseAcceleration = 28.5f, TraverseSpeed = 53f, TurretTraverseSpeed = 46f,
+                Speed = 1.34f, Acceleration = 0.285f, EnginePower = 1630f, TraverseAcceleration = 28.5f, TraverseSpeed = 53f, TurretTraverseSpeed = 46f,
                 TurretArmorFront = 136, TurretArmorSide = 88, TurretArmorRear = 60,
                 HullArmorFront = 122, HullArmorSide = 79, HullArmorRear = 54,
                 IsVisible = false
@@ -473,7 +473,7 @@ namespace WarOfMachines.Data
                 PurchaseCost = 60000,
                 HP = 575, ShellSpeed = 93f, ShellsCount = 50, DamageMin = 151.2f, DamageMax = 226.8f, Penetration = 158, ViewRange = 92f,
                 ReloadTime = 3.8f, Accuracy = 2.0f, AimTime = 3.05f,
-                Speed = 1.2f, Acceleration = 0.26f, EnginePower = 700f, TraverseAcceleration = 26f, TraverseSpeed = 50f, TurretTraverseSpeed = 44f,
+                Speed = 1.2f, Acceleration = 0.26f, EnginePower = 1700f, TraverseAcceleration = 26f, TraverseSpeed = 50f, TurretTraverseSpeed = 44f,
                 TurretArmorFront = 160, TurretArmorSide = 103, TurretArmorRear = 70,
                 HullArmorFront = 143, HullArmorSide = 94, HullArmorRear = 64,
                 IsVisible = false
