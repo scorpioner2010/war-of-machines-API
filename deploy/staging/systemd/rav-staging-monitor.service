@@ -1,0 +1,7 @@
+[Unit]
+Description=RAV Staging health and availability check
+After=docker.service rav-staging-compose.service
+
+[Service]
+Type=oneshot
+ExecStart=/opt/rav-staging/scripts/monitor-staging.sh

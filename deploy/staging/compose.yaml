@@ -1,0 +1,261 @@
+name: rav-staging
+
+services:
+  postgres-tls-init:
+    image: postgres:16.16-bookworm
+    user: "0:0"
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        # Host provisioning verifies the PostgreSQL certificate chain before mounting it.
+        install -d -o postgres -g postgres -m 0700 /var/lib/postgresql/tls
+        install -o postgres -g postgres -m 0644 /run/secrets/postgres_server_certificate /var/lib/postgresql/tls/server.crt
+        install -o postgres -g postgres -m 0600 /run/secrets/postgres_server_private_key /var/lib/postgresql/tls/server.key
+        install -o postgres -g postgres -m 0644 /run/secrets/postgres_ca_certificate /var/lib/postgresql/tls/ca.crt
+    volumes:
+      - postgres_tls:/var/lib/postgresql/tls
+    secrets: [postgres_ca_certificate, postgres_server_certificate, postgres_server_private_key]
+    restart: "no"
+    networks: [backend]
+
+  postgres:
+    image: postgres:16.16-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${RAV_STAGING_POSTGRES_DB:-rav_staging}
+      POSTGRES_USER: ${RAV_STAGING_BOOTSTRAP_USER:-rav_staging_bootstrap}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_bootstrap_password
+      POSTGRES_INITDB_ARGS: --auth-host=scram-sha-256 --auth-local=trust
+      PGDATA: /var/lib/postgresql/data/pgdata
+    command:
+      - postgres
+      - -c
+      - max_connections=100
+      - -c
+      - shared_buffers=512MB
+      - -c
+      - ssl=on
+      - -c
+      - ssl_min_protocol_version=TLSv1.2
+      - -c
+      - ssl_ca_file=/var/lib/postgresql/tls/ca.crt
+      - -c
+      - ssl_cert_file=/var/lib/postgresql/tls/server.crt
+      - -c
+      - ssl_key_file=/var/lib/postgresql/tls/server.key
+      - -c
+      - hba_file=/etc/postgresql/pg_hba.conf
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - postgres_tls:/var/lib/postgresql/tls:ro
+      - ./postgres/init-roles.sh:/docker-entrypoint-initdb.d/10-init-roles.sh:ro
+      - ./postgres/pg_hba.conf:/etc/postgresql/pg_hba.conf:ro
+    secrets: [db_bootstrap_password, db_runtime_password, db_migrator_password]
+    depends_on:
+      postgres-tls-init:
+        condition: service_completed_successfully
+    networks: [backend]
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 8
+      start_period: 30s
+    logging: &bounded-logs
+      driver: json-file
+      options: {max-size: 10m, max-file: "5"}
+
+  api:
+    image: ${RAV_STAGING_API_IMAGE:-rav-api:staging}
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+      target: runtime
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "8080"
+      ASPNETCORE_URLS: http://+:8080
+      API_HOST: ${RAV_STAGING_API_HOST:?Set RAV_STAGING_API_HOST to the verified staging DNS hostname}
+      AllowedHosts: ${RAV_STAGING_API_HOST:?Set RAV_STAGING_API_HOST to the verified staging DNS hostname}
+      ForwardedHeaders__KnownProxies__0: ${RAV_STAGING_CADDY_IP:-172.31.240.2}
+      Database__ApplyMigrationsOnStartup: "false"
+      Database__RunSeedOnStartup: "false"
+      Swagger__Enabled: "false"
+      DataProtection__KeyDirectory: /var/lib/rav-staging/data-protection
+      DataProtection__CertificatePath: /run/credentials/data-protection.pfx
+    volumes:
+      - api_data_protection:/var/lib/rav-staging/data-protection
+    secrets:
+      - {source: api_database_url, target: DATABASE_URL}
+      - {source: jwt_key, target: Jwt__Key}
+      - {source: jwt_issuer, target: Jwt__Issuer}
+      - {source: jwt_audience, target: Jwt__Audience}
+      - {source: server_id, target: DedicatedServers__Provisioned__0__ServerId}
+      - {source: server_credential, target: DedicatedServers__Provisioned__0__Credential}
+      - {source: postgres_ca_certificate, target: postgres-ca.crt}
+      - {source: data_protection_certificate, target: /run/credentials/data-protection.pfx}
+      - {source: data_protection_certificate_password, target: DataProtection__CertificatePassword}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [backend]
+    healthcheck:
+      test: ["CMD", "dotnet", "/health-probe/HealthProbe.dll", "http://127.0.0.1:8080/health/ready", "${RAV_STAGING_API_HOST:?Set RAV_STAGING_API_HOST to the verified staging DNS hostname}"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 60s
+    logging: *bounded-logs
+
+  caddy:
+    image: caddy:2.11.9-alpine
+    restart: unless-stopped
+    environment:
+      RAV_STAGING_API_HOST: ${RAV_STAGING_API_HOST:?Set RAV_STAGING_API_HOST to the verified staging DNS hostname}
+    ports:
+      - "80:80/tcp"
+      - "443:443/tcp"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      edge: {}
+      backend:
+        ipv4_address: ${RAV_STAGING_CADDY_IP:-172.31.240.2}
+    healthcheck:
+      test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    logging: *bounded-logs
+
+  migrator:
+    image: ${RAV_STAGING_MIGRATOR_IMAGE:-rav-api-migrator:staging}
+    build:
+      context: ./api
+      dockerfile: Dockerfile
+      target: migrate
+    profiles: [migration]
+    restart: "no"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Database__ApplyMigrationsOnStartup: "false"
+      Database__RunSeedOnStartup: "false"
+    secrets:
+      - {source: migration_database_url, target: DATABASE_URL}
+      - {source: postgres_ca_certificate, target: postgres-ca.crt}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [backend]
+    command: ["database", "update", "--no-build", "--configuration", "Release", "--project", "RavApi.csproj"]
+    logging: *bounded-logs
+
+  seed:
+    image: ${RAV_STAGING_API_IMAGE:-rav-api:staging}
+    profiles: [seed]
+    restart: "no"
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        dotnet RavApi.dll &
+        child=$$!
+        trap 'kill -TERM "$$child" 2>/dev/null || true; wait "$$child" || true || true' EXIT
+        for attempt in $$(seq 1 45); do
+          if dotnet /health-probe/HealthProbe.dll "http://127.0.0.1:8080/health/ready" "$$API_HOST"; then
+            kill -TERM "$$child"
+            wait "$$child" || true
+            trap - EXIT
+            exit 0
+          fi
+          if ! kill -0 "$$child" 2>/dev/null; then
+            wait "$$child" || true
+            exit 1
+          fi
+          sleep 2
+        done
+        echo "Staging seed startup did not become ready within 90 seconds." >&2
+        exit 1
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "8080"
+      ASPNETCORE_URLS: http://+:8080
+      API_HOST: ${RAV_STAGING_API_HOST:?Set RAV_STAGING_API_HOST to the verified staging DNS hostname}
+      AllowedHosts: ${RAV_STAGING_API_HOST:?Set RAV_STAGING_API_HOST to the verified staging DNS hostname}
+      ForwardedHeaders__KnownProxies__0: ${RAV_STAGING_CADDY_IP:-172.31.240.2}
+      Database__ApplyMigrationsOnStartup: "false"
+      Database__RunSeedOnStartup: "true"
+      Swagger__Enabled: "false"
+      DataProtection__KeyDirectory: /var/lib/rav-staging/data-protection
+      DataProtection__CertificatePath: /run/credentials/data-protection.pfx
+    volumes:
+      - api_data_protection:/var/lib/rav-staging/data-protection
+    secrets:
+      - {source: api_database_url, target: DATABASE_URL}
+      - {source: jwt_key, target: Jwt__Key}
+      - {source: jwt_issuer, target: Jwt__Issuer}
+      - {source: jwt_audience, target: Jwt__Audience}
+      - {source: server_id, target: DedicatedServers__Provisioned__0__ServerId}
+      - {source: server_credential, target: DedicatedServers__Provisioned__0__Credential}
+      - {source: postgres_ca_certificate, target: postgres-ca.crt}
+      - {source: data_protection_certificate, target: /run/credentials/data-protection.pfx}
+      - {source: data_protection_certificate_password, target: DataProtection__CertificatePassword}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks: [backend]
+    logging: *bounded-logs
+
+networks:
+  edge: {}
+  backend:
+    internal: true
+    ipam:
+      config:
+        - subnet: ${RAV_STAGING_BACKEND_SUBNET:-172.31.240.0/24}
+
+volumes:
+  postgres_data: {name: rav_staging_postgres_data}
+  postgres_tls: {name: rav_staging_postgres_tls}
+  api_data_protection: {name: rav_staging_api_data_protection}
+  caddy_data: {name: rav_staging_caddy_data}
+  caddy_config: {name: rav_staging_caddy_config}
+
+secrets:
+  db_bootstrap_password:
+    file: ${RAV_STAGING_SECRETS_DIR:-/etc/rav-staging/secrets}/db_bootstrap_password
+  db_runtime_password:
+    file: ${RAV_STAGING_SECRETS_DIR:-/etc/rav-staging/secrets}/db_runtime_password
+  db_migrator_password:
+    file: ${RAV_STAGING_SECRETS_DIR:-/etc/rav-staging/secrets}/db_migrator_password
+  api_database_url:
+    file: ${RAV_STAGING_SECRETS_DIR:-/etc/rav-staging/secrets}/api_database_url
+  migration_database_url:
+    file: ${RAV_STAGING_SECRETS_DIR:-/etc/rav-staging/secrets}/migration_database_url
+  jwt_key:
+    file: ${RAV_STAGING_SECRETS_DIR:-/etc/rav-staging/secrets}/jwt_key
+  jwt_issuer:
+    file: ${RAV_STAGING_SECRETS_DIR:-/etc/rav-staging/secrets}/jwt_issuer
+  jwt_audience:
+    file: ${RAV_STAGING_SECRETS_DIR:-/etc/rav-staging/secrets}/jwt_audience
+  server_id:
+    file: ${RAV_STAGING_SECRETS_DIR:-/etc/rav-staging/secrets}/server_id
+  server_credential:
+    file: ${RAV_STAGING_SECRETS_DIR:-/etc/rav-staging/secrets}/server_credential
+  postgres_ca_certificate:
+    file: ${RAV_STAGING_SECRETS_DIR:-/etc/rav-staging/secrets}/postgres_ca.crt
+  postgres_server_certificate:
+    file: ${RAV_STAGING_SECRETS_DIR:-/etc/rav-staging/secrets}/postgres_server.crt
+  postgres_server_private_key:
+    file: ${RAV_STAGING_SECRETS_DIR:-/etc/rav-staging/secrets}/postgres_server.key
+  data_protection_certificate:
+    file: ${RAV_STAGING_SECRETS_DIR:-/etc/rav-staging/secrets}/data_protection.pfx
+  data_protection_certificate_password:
+    file: ${RAV_STAGING_SECRETS_DIR:-/etc/rav-staging/secrets}/data_protection_password

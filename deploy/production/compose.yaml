@@ -1,0 +1,228 @@
+name: war-of-machines
+
+services:
+  postgres:
+    image: postgres:16.16-bookworm
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-war_of_machines}
+      POSTGRES_USER: ${POSTGRES_BOOTSTRAP_USER:-wom_bootstrap}
+      POSTGRES_PASSWORD_FILE: /run/secrets/db_bootstrap_password
+      PGDATA: /var/lib/postgresql/data/pgdata
+    command:
+      - postgres
+      - -c
+      - max_connections=100
+      - -c
+      - shared_buffers=512MB
+      - -c
+      - ssl=on
+      - -c
+      - ssl_min_protocol_version=TLSv1.2
+      - -c
+      - ssl_cert_file=/run/postgres-tls/server.crt
+      - -c
+      - ssl_key_file=/run/postgres-tls/server.key
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./postgres/init-roles.sh:/docker-entrypoint-initdb.d/10-init-roles.sh:ro
+      - ${RAV_SECRETS_DIR:-${WOM_SECRETS_DIR:-./secrets}}/postgres_server_certificate:/run/postgres-tls/server.crt:ro
+      - ${RAV_SECRETS_DIR:-${WOM_SECRETS_DIR:-./secrets}}/postgres_server_private_key:/run/postgres-tls/server.key:ro
+    secrets:
+      - db_bootstrap_password
+      - db_runtime_password
+      - db_migrator_password
+    networks:
+      backend:
+        ipv4_address: 172.30.0.4
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U \"$${POSTGRES_USER}\" -d \"$${POSTGRES_DB}\""]
+      interval: 10s
+      timeout: 5s
+      retries: 6
+      start_period: 30s
+    deploy:
+      resources:
+        limits:
+          cpus: "2.00"
+          memory: 4G
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+
+  api:
+    image: rav-api:stage2
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      target: runtime
+    restart: unless-stopped
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      ASPNETCORE_HTTP_PORTS: "8080"
+      ASPNETCORE_URLS: http://+:8080
+      API_HOST: ${API_HOST:?Set API_HOST to the real DNS hostname before deployment}
+      AllowedHosts: ${ALLOWED_HOSTS:-war-of-machines-api.onrender.com}
+      ForwardedHeaders__KnownProxies__0: ${API_TRUSTED_PROXY_IP:-172.30.0.2}
+      Database__ApplyMigrationsOnStartup: "false"
+      Database__RunSeedOnStartup: "false"
+      Swagger__Enabled: "false"
+      DataProtection__KeyDirectory: /var/lib/war-of-machines/data-protection
+      DataProtection__CertificatePath: /run/credentials/data-protection.pfx
+    volumes:
+      - api_data_protection:/var/lib/war-of-machines/data-protection
+    secrets:
+      - source: api_database_url
+        target: DATABASE_URL
+      - source: jwt_key
+        target: Jwt__Key
+      - source: jwt_issuer
+        target: Jwt__Issuer
+      - source: jwt_audience
+        target: Jwt__Audience
+      - source: server_id
+        target: DedicatedServers__Provisioned__0__ServerId
+      - source: server_credential
+        target: DedicatedServers__Provisioned__0__Credential
+      - source: postgres_ca_certificate
+        target: postgres-ca.crt
+      - source: data_protection_certificate
+        target: /run/credentials/data-protection.pfx
+      - source: data_protection_certificate_password
+        target: DataProtection__CertificatePassword
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      backend:
+        ipv4_address: 172.30.0.3
+    healthcheck:
+      test: ["CMD", "dotnet", "/health-probe/HealthProbe.dll", "http://127.0.0.1:8080/health/ready", "${API_HOST:?Set API_HOST to the real DNS hostname before deployment}"]
+      interval: 15s
+      timeout: 5s
+      retries: 5
+      start_period: 45s
+    deploy:
+      resources:
+        limits:
+          cpus: "1.50"
+          memory: 2G
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+
+  caddy:
+    image: caddy:2.11.9-alpine
+    restart: unless-stopped
+    environment:
+      API_HOST: ${API_HOST:?Set API_HOST to the real DNS hostname before deployment}
+    ports:
+      - "80:80/tcp"
+      - "443:443/tcp"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    depends_on:
+      api:
+        condition: service_healthy
+    networks:
+      edge: {}
+      backend:
+        ipv4_address: 172.30.0.2
+    healthcheck:
+      test: ["CMD", "caddy", "validate", "--config", "/etc/caddy/Caddyfile", "--adapter", "caddyfile"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    deploy:
+      resources:
+        limits:
+          cpus: "0.50"
+          memory: 256M
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "5"
+
+  migrator:
+    image: rav-api-migrator:stage2
+    build:
+      context: ../..
+      dockerfile: Dockerfile
+      target: migrate
+    profiles: ["migration"]
+    restart: "no"
+    environment:
+      ASPNETCORE_ENVIRONMENT: Production
+      Database__ApplyMigrationsOnStartup: "false"
+      Database__RunSeedOnStartup: "false"
+    secrets:
+      - source: migration_database_url
+        target: DATABASE_URL
+      - source: postgres_ca_certificate
+        target: postgres-ca.crt
+      - source: data_protection_certificate
+        target: /run/credentials/data-protection.pfx
+      - source: data_protection_certificate_password
+        target: DataProtection__CertificatePassword
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      backend: {}
+    command: ["database", "update", "--no-build", "--project", "RavApi.csproj"]
+    logging:
+      driver: json-file
+      options:
+        max-size: 10m
+        max-file: "3"
+
+networks:
+  edge: {}
+  backend:
+    internal: true
+    ipam:
+      config:
+        - subnet: 172.30.0.0/24
+
+volumes:
+  postgres_data: {}
+  api_data_protection: {}
+  caddy_data: {}
+  caddy_config: {}
+
+secrets:
+  db_bootstrap_password:
+    file: ${RAV_SECRETS_DIR:-${WOM_SECRETS_DIR:-./secrets}}/db_bootstrap_password
+  db_runtime_password:
+    file: ${RAV_SECRETS_DIR:-${WOM_SECRETS_DIR:-./secrets}}/db_runtime_password
+  db_migrator_password:
+    file: ${RAV_SECRETS_DIR:-${WOM_SECRETS_DIR:-./secrets}}/db_migrator_password
+  api_database_url:
+    file: ${RAV_SECRETS_DIR:-${WOM_SECRETS_DIR:-./secrets}}/api_database_url
+  migration_database_url:
+    file: ${RAV_SECRETS_DIR:-${WOM_SECRETS_DIR:-./secrets}}/migration_database_url
+  jwt_key:
+    file: ${RAV_SECRETS_DIR:-${WOM_SECRETS_DIR:-./secrets}}/jwt_key
+  jwt_issuer:
+    file: ${RAV_SECRETS_DIR:-${WOM_SECRETS_DIR:-./secrets}}/jwt_issuer
+  jwt_audience:
+    file: ${RAV_SECRETS_DIR:-${WOM_SECRETS_DIR:-./secrets}}/jwt_audience
+  server_id:
+    file: ${RAV_SECRETS_DIR:-${WOM_SECRETS_DIR:-./secrets}}/server_id
+  server_credential:
+    file: ${RAV_SECRETS_DIR:-${WOM_SECRETS_DIR:-./secrets}}/server_credential
+  postgres_ca_certificate:
+    file: ${RAV_SECRETS_DIR:-${WOM_SECRETS_DIR:-./secrets}}/postgres_ca.crt
+  data_protection_certificate:
+    file: ${RAV_SECRETS_DIR:-${WOM_SECRETS_DIR:-./secrets}}/data_protection_certificate.pfx
+  data_protection_certificate_password:
+    file: ${RAV_SECRETS_DIR:-${WOM_SECRETS_DIR:-./secrets}}/data_protection_certificate_password

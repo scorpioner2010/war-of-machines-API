@@ -1,0 +1,15 @@
+D:\Programing\ServerProjects\war-of-machines-API\deploy\production\healthcheck\bin\Debug\net10.0\HealthProbe.exe
+D:\Programing\ServerProjects\war-of-machines-API\deploy\production\healthcheck\bin\Debug\net10.0\HealthProbe.deps.json
+D:\Programing\ServerProjects\war-of-machines-API\deploy\production\healthcheck\bin\Debug\net10.0\HealthProbe.runtimeconfig.json
+D:\Programing\ServerProjects\war-of-machines-API\deploy\production\healthcheck\bin\Debug\net10.0\HealthProbe.dll
+D:\Programing\ServerProjects\war-of-machines-API\deploy\production\healthcheck\bin\Debug\net10.0\HealthProbe.pdb
+D:\Programing\ServerProjects\war-of-machines-API\deploy\production\healthcheck\obj\Debug\net10.0\HealthProbe.GeneratedMSBuildEditorConfig.editorconfig
+D:\Programing\ServerProjects\war-of-machines-API\deploy\production\healthcheck\obj\Debug\net10.0\HealthProbe.AssemblyInfoInputs.cache
+D:\Programing\ServerProjects\war-of-machines-API\deploy\production\healthcheck\obj\Debug\net10.0\HealthProbe.AssemblyInfo.cs
+D:\Programing\ServerProjects\war-of-machines-API\deploy\production\healthcheck\obj\Debug\net10.0\HealthProbe.csproj.CoreCompileInputs.cache
+D:\Programing\ServerProjects\war-of-machines-API\deploy\production\healthcheck\obj\Debug\net10.0\HealthProbe.sourcelink.json
+D:\Programing\ServerProjects\war-of-machines-API\deploy\production\healthcheck\obj\Debug\net10.0\HealthProbe.dll
+D:\Programing\ServerProjects\war-of-machines-API\deploy\production\healthcheck\obj\Debug\net10.0\refint\HealthProbe.dll
+D:\Programing\ServerProjects\war-of-machines-API\deploy\production\healthcheck\obj\Debug\net10.0\HealthProbe.pdb
+D:\Programing\ServerProjects\war-of-machines-API\deploy\production\healthcheck\obj\Debug\net10.0\HealthProbe.genruntimeconfig.cache
+D:\Programing\ServerProjects\war-of-machines-API\deploy\production\healthcheck\obj\Debug\net10.0\ref\HealthProbe.dll

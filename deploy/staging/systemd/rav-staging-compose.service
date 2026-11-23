@@ -1,0 +1,18 @@
+[Unit]
+Description=RAV Staging API, PostgreSQL and Caddy (Docker Compose)
+Requires=docker.service
+After=docker.service network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/opt/rav-staging
+ExecStartPre=/usr/bin/docker compose --project-name rav-staging --project-directory /opt/rav-staging --env-file /etc/rav-staging/staging.env --file /opt/rav-staging/compose.yaml config --quiet
+ExecStart=/usr/bin/docker compose --project-name rav-staging --project-directory /opt/rav-staging --env-file /etc/rav-staging/staging.env --file /opt/rav-staging/compose.yaml up --detach --wait
+ExecStop=/usr/bin/docker compose --project-name rav-staging --project-directory /opt/rav-staging --env-file /etc/rav-staging/staging.env --file /opt/rav-staging/compose.yaml stop --timeout 30
+TimeoutStartSec=0
+TimeoutStopSec=90
+
+[Install]
+WantedBy=multi-user.target

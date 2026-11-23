@@ -1,0 +1,8 @@
+.env
+.env.*
+!.env.example
+staging.env
+secrets/
+artifacts/
+bundle/
+payload/

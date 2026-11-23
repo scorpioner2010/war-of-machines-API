@@ -1,0 +1,11 @@
+.git
+.vs
+.idea
+**/bin/
+**/obj/
+**/.env.local
+**/.env.production
+deploy/production/secrets/**
+deploy/production/.env.production
+**/*.user
+**/*.suo

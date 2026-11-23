@@ -1,0 +1,407 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Security.Claims;
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using RavApi.Data;
+using RavApi.Infrastructure;
+using RavApi.Models;
+
+namespace RavApi.Controllers
+{
+    [ApiController]
+    [Route("matches")]
+    [Authorize]
+    public class MatchesController : ControllerBase
+    {
+        private readonly AppDbContext _db;
+
+        // --- Параметри нарахувань ---
+        private const int XpWinBase = 300;
+        private const int XpDrawBase = 200;
+        private const int XpLoseBase = 150;
+        private const double XpPerDamage = 0.5;
+        private const int XpPerKill = 50;
+        private const int XpCapPerBattle = 2000;
+
+        private const int BoltsBaseParticipation = 500;
+        private const int BoltsWinBonus = 500;
+        private const int BoltsPerDamage = 2;
+        private const int BoltsPerKill = 150;
+        private const int BoltsCapPerBattle = 10000;
+
+        // --- MMR ---
+        private const int MmrK = 24;
+        private const int MmrCapGain = 30;
+        private const int MmrCapLoss = -30;
+
+        // --- АНТИ-ЧИТ КАПИ ---
+        private const int MaxKillsPerBattle = 20;
+        private const int MaxDamagePerBattle = 20000;
+        private const int MinKills = 0;
+        private const int MinDamage = 0;
+
+        // --- Відсоток Free XP ---
+        private const double FreeXpPercent = 0.05;
+
+        public MatchesController(AppDbContext db)
+        {
+            _db = db;
+        }
+
+        private string? CurrentDedicatedServerId()
+        {
+            return User.FindFirstValue(DedicatedServerAuthenticationHandler.ServerIdClaim);
+        }
+
+        // -------------------------------
+        // POST /matches/start
+        // -------------------------------
+        [HttpPost("start")]
+        [Authorize(Policy = "dedicatedServer")]
+        public IActionResult StartMatch([FromBody] StartMatchRequest req)
+        {
+            string? serverId = CurrentDedicatedServerId();
+            if (string.IsNullOrWhiteSpace(serverId))
+            {
+                return Forbid();
+            }
+
+            if (req.Participants == null || req.Participants.Count == 0 || req.Participants.Count > 64)
+            {
+                return BadRequest("Authoritative participants are required.");
+            }
+
+            var duplicateUsers = req.Participants
+                .GroupBy(participant => participant.UserId)
+                .Where(group => group.Count() > 1)
+                .Select(group => group.Key)
+                .ToList();
+            if (duplicateUsers.Count > 0 || req.Participants.Any(participant => participant.UserId <= 0 || participant.VehicleId <= 0 || participant.Team <= 0))
+            {
+                return BadRequest("Invalid match roster.");
+            }
+
+            var userIds = req.Participants.Select(participant => participant.UserId).Distinct().ToList();
+            var users = _db.Players.Where(user => userIds.Contains(user.Id)).Select(user => user.Id).ToHashSet();
+            if (users.Count != userIds.Count)
+            {
+                return BadRequest("Match roster contains unknown users.");
+            }
+
+            var ownedVehicles = _db.UserVehicles
+                .Where(vehicle => userIds.Contains(vehicle.UserId))
+                .Select(vehicle => new { vehicle.UserId, vehicle.VehicleId })
+                .ToHashSet();
+            if (req.Participants.Any(participant => !ownedVehicles.Contains(new { participant.UserId, participant.VehicleId })))
+            {
+                return BadRequest("Match roster contains a vehicle not owned by its user.");
+            }
+
+            var match = new Match
+            {
+                Map = string.IsNullOrWhiteSpace(req.Map) ? "default_map" : req.Map,
+                StartedAt = DateTimeOffset.UtcNow,
+                DedicatedServerId = serverId
+            };
+            _db.Matches.Add(match);
+
+            foreach (MatchRosterInput participant in req.Participants)
+            {
+                _db.MatchParticipants.Add(new MatchParticipant
+                {
+                    Match = match,
+                    UserId = participant.UserId,
+                    VehicleId = participant.VehicleId,
+                    Team = participant.Team,
+                    Result = "pending",
+                    IsFinalized = false
+                });
+            }
+
+            _db.SaveChanges();
+
+            return Ok(new { matchId = match.Id });
+        }
+
+        public class StartMatchRequest
+        {
+            [System.ComponentModel.DataAnnotations.StringLength(64)]
+            public string Map { get; set; } = "default_map";
+
+            [System.ComponentModel.DataAnnotations.MaxLength(64)]
+            public List<MatchRosterInput> Participants { get; set; } = new();
+        }
+
+        public class MatchRosterInput
+        {
+            public int UserId { get; set; }
+            public int VehicleId { get; set; }
+            public int Team { get; set; }
+        }
+
+        // ---------------------------------------------
+        // POST /matches/{matchId}/end
+        // ---------------------------------------------
+        [HttpPost("{matchId:int}/end")]
+        [Authorize(Policy = "dedicatedServer")]
+        public IActionResult EndMatch(int matchId, [FromBody] EndMatchRequest req)
+        {
+            if (req == null || req.Participants == null || req.Participants.Count == 0)
+            {
+                return BadRequest("Participants required.");
+            }
+
+            var strategy = _db.Database.CreateExecutionStrategy();
+            try
+            {
+                return strategy.Execute<IActionResult>(() =>
+                {
+                    using var tx = _db.Database.BeginTransaction();
+
+                var match = _db.Matches.FirstOrDefault(m => m.Id == matchId);
+                if (match == null)
+                {
+                    tx.Rollback();
+                    return NotFound("Match not found.");
+                }
+
+                if (!string.Equals(match.DedicatedServerId, CurrentDedicatedServerId(), StringComparison.Ordinal))
+                {
+                    tx.Rollback();
+                    return Forbid();
+                }
+
+                if (match.EndedAt != null)
+                {
+                    List<MatchParticipantResponse> existingResults = GetParticipantResponses(match.Id);
+                    tx.Commit();
+                    return Ok(new { ok = true, alreadyProcessed = true, participants = existingResults });
+                }
+
+                var roster = _db.MatchParticipants
+                    .Where(participant => participant.MatchId == matchId)
+                    .ToDictionary(participant => participant.UserId, participant => participant);
+                if (roster.Count == 0 || roster.Count != req.Participants.Count)
+                {
+                    tx.Rollback();
+                    return BadRequest("Match results do not match the authoritative roster.");
+                }
+
+                var duplicateUsers = req.Participants
+                    .GroupBy(p => p.UserId)
+                    .Where(g => g.Count() > 1)
+                    .Select(g => g.Key)
+                    .ToList();
+
+                if (duplicateUsers.Count > 0)
+                {
+                    tx.Rollback();
+                    return BadRequest($"Duplicate participants: {string.Join(",", duplicateUsers)}");
+                }
+
+                var userIds = req.Participants.Select(p => p.UserId).Distinct().ToList();
+                if (userIds.Any(userId => !roster.ContainsKey(userId)))
+                {
+                    tx.Rollback();
+                    return BadRequest("Match results contain an unknown participant.");
+                }
+
+                var users = _db.Players.Where(u => userIds.Contains(u.Id)).ToDictionary(u => u.Id, u => u);
+
+                var missingUsers = userIds.Where(id => !users.ContainsKey(id)).ToList();
+                if (missingUsers.Count > 0)
+                {
+                    tx.Rollback();
+                    return BadRequest($"Unknown users: {string.Join(",", missingUsers)}");
+                }
+
+                var teamToUserIds = req.Participants
+                    .GroupBy(p => p.Team)
+                    .ToDictionary(g => g.Key, g => g.Select(x => x.UserId).ToList());
+
+                var teamAvgMmr = new Dictionary<int, double>();
+                foreach (var kv in teamToUserIds)
+                {
+                    var list = kv.Value.Where(id => users.ContainsKey(id)).Select(id => users[id].Mmr).ToList();
+                    teamAvgMmr[kv.Key] = list.Count > 0 ? list.Average() : 1000.0;
+                }
+
+                match.EndedAt = DateTimeOffset.UtcNow;
+
+                foreach (var raw in req.Participants)
+                {
+                    var user = users[raw.UserId];
+                    MatchParticipant rosterParticipant = roster[raw.UserId];
+                    if (rosterParticipant.VehicleId != raw.VehicleId || rosterParticipant.Team != raw.Team)
+                    {
+                        tx.Rollback();
+                        return BadRequest("Match results changed the authoritative participant roster.");
+                    }
+
+                    if (rosterParticipant.IsFinalized)
+                    {
+                        tx.Rollback();
+                        return Conflict("Match participant has already been finalized.");
+                    }
+
+                    int kills = Math.Clamp(raw.Kills, MinKills, MaxKillsPerBattle);
+                    int damage = Math.Clamp(raw.Damage, MinDamage, MaxDamagePerBattle);
+                    string result = NormalizeResult(raw.Result);
+
+                    // --- XP ---
+                    int xpBase = result switch
+                    {
+                        "win" => XpWinBase,
+                        "draw" => XpDrawBase,
+                        _ => XpLoseBase
+                    };
+                    int xpFromDamage = (int)Math.Round(damage * XpPerDamage, MidpointRounding.AwayFromZero);
+                    int xpFromKills = kills * XpPerKill;
+                    int xpTotal = Math.Clamp(xpBase + xpFromDamage + xpFromKills, 0, XpCapPerBattle);
+
+                    // --- Bolts ---
+                    int bolts = BoltsBaseParticipation
+                                + (result == "win" ? BoltsWinBonus : 0)
+                                + (damage * BoltsPerDamage)
+                                + (kills * BoltsPerKill);
+                    bolts = Math.Clamp(bolts, 0, BoltsCapPerBattle);
+                    int freeXp = (int)Math.Round(xpTotal * FreeXpPercent, MidpointRounding.AwayFromZero);
+
+                    // --- MMR ---
+                    int enemyTeam = FindEnemyTeam(teamToUserIds.Keys.ToList(), raw.Team);
+                    double enemyAvg = teamAvgMmr.TryGetValue(enemyTeam, out var en) ? en : 1000.0;
+                    double expected = 1.0 / (1.0 + Math.Pow(10.0, (enemyAvg - user.Mmr) / 400.0));
+                    double score = result switch
+                    {
+                        "win" => 1.0,
+                        "draw" => 0.5,
+                        _ => 0.0
+                    };
+                    int mmrDelta = (int)Math.Round(MmrK * (score - expected), MidpointRounding.AwayFromZero);
+                    mmrDelta = Math.Clamp(mmrDelta, MmrCapLoss, MmrCapGain);
+
+                    rosterParticipant.Result = result;
+                    rosterParticipant.Kills = kills;
+                    rosterParticipant.Damage = damage;
+                    rosterParticipant.XpEarned = xpTotal;
+                    rosterParticipant.BoltsEarned = bolts;
+                    rosterParticipant.FreeXpEarned = freeXp;
+                    rosterParticipant.MmrDelta = mmrDelta;
+                    rosterParticipant.IsFinalized = true;
+
+                    // --- Оновлення прогресу ---
+                    user.Mmr += mmrDelta;
+                    user.Bolts += bolts;
+                    user.FreeXp += freeXp;
+
+                    // Знаходимо техніку гравця
+                    var uv = _db.UserVehicles.FirstOrDefault(v => v.UserId == raw.UserId && v.VehicleId == raw.VehicleId);
+                    if (uv != null)
+                    {
+                        uv.Xp += xpTotal;
+                    }
+                }
+
+                    match.Version++;
+                    _db.SaveChanges();
+                    List<MatchParticipantResponse> participants = GetParticipantResponses(match.Id);
+                    tx.Commit();
+
+                    return Ok(new { ok = true, participants });
+                });
+            }
+            catch (DbUpdateConcurrencyException)
+            {
+                return Conflict("Match was finalized by another request.");
+            }
+            catch (DbUpdateException)
+            {
+                return Conflict("Match result could not be finalized.");
+            }
+        }
+
+        private static string NormalizeResult(string input)
+        {
+            if (string.Equals(input, "win", StringComparison.OrdinalIgnoreCase)) return "win";
+            if (string.Equals(input, "draw", StringComparison.OrdinalIgnoreCase)) return "draw";
+            return "lose";
+        }
+
+        private static int FindEnemyTeam(List<int> teams, int myTeam)
+        {
+            foreach (var t in teams)
+            {
+                if (t != myTeam) return t;
+            }
+            return myTeam;
+        }
+
+        public class EndMatchRequest
+        {
+            public List<ParticipantInput> Participants { get; set; } = new();
+        }
+
+        public class ParticipantInput
+        {
+            public int UserId { get; set; }
+            public int VehicleId { get; set; }
+            public int Team { get; set; }
+            public string Result { get; set; } = "lose";
+            public int Kills { get; set; } = 0;
+            public int Damage { get; set; } = 0;
+        }
+
+        // -------------------------------
+        // GET /matches/{matchId}/participants
+        // -------------------------------
+        [HttpGet("{matchId:int}/participants")]
+        public IActionResult GetParticipants(int matchId)
+        {
+            return Ok(GetParticipantResponses(matchId));
+        }
+
+        private List<MatchParticipantResponse> GetParticipantResponses(int matchId)
+        {
+            return _db.MatchParticipants
+                .AsNoTracking()
+                .Where(x => x.MatchId == matchId)
+                .Select(x => new MatchParticipantResponse
+                {
+                    UserId = x.UserId,
+                    Username = x.User != null ? x.User.Username : "",
+                    VehicleId = x.VehicleId,
+                    VehicleName = x.Vehicle != null ? x.Vehicle.Name : "",
+                    Team = x.Team,
+                    Result = x.Result,
+                    Kills = x.Kills,
+                    Damage = x.Damage,
+                    XpEarned = x.XpEarned,
+                    Bolts = x.BoltsEarned,
+                    FreeXp = x.FreeXpEarned,
+                    MmrDelta = x.MmrDelta,
+                    RewardsCalculated = x.BoltsEarned > 0
+                })
+                .ToList();
+        }
+
+        public class MatchParticipantResponse
+        {
+            public int UserId { get; set; }
+            public string Username { get; set; } = string.Empty;
+            public int VehicleId { get; set; }
+            public string VehicleName { get; set; } = string.Empty;
+            public int Team { get; set; }
+            public string Result { get; set; } = string.Empty;
+            public int Kills { get; set; }
+            public int Damage { get; set; }
+            public int XpEarned { get; set; }
+            public int Bolts { get; set; }
+            public int FreeXp { get; set; }
+            public int MmrDelta { get; set; }
+            public bool RewardsCalculated { get; set; }
+        }
+    }
+}

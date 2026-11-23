@@ -1,0 +1,198 @@
+using Microsoft.EntityFrameworkCore;
+using RavApi.Models;
+
+namespace RavApi.Data
+{
+    public class AppDbContext : DbContext
+    {
+        public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
+
+        public DbSet<Player> Players => Set<Player>();
+        public DbSet<Vehicle> Vehicles => Set<Vehicle>();
+        public DbSet<UserVehicle> UserVehicles => Set<UserVehicle>();
+        public DbSet<UserVehicleResearch> UserVehicleResearches => Set<UserVehicleResearch>();
+        public DbSet<Match> Matches => Set<Match>();
+        public DbSet<MatchParticipant> MatchParticipants => Set<MatchParticipant>();
+        public DbSet<DedicatedServer> DedicatedServers => Set<DedicatedServer>();
+        public DbSet<UserSession> UserSessions => Set<UserSession>();
+        public DbSet<ConnectionTicket> ConnectionTickets => Set<ConnectionTicket>();
+        public DbSet<Faction> Factions => Set<Faction>();
+        public DbSet<Map> Maps => Set<Map>();
+
+        public DbSet<VehicleResearchRequirement> VehicleResearchRequirements => Set<VehicleResearchRequirement>();
+
+        protected override void OnModelCreating(ModelBuilder modelBuilder)
+        {
+            base.OnModelCreating(modelBuilder);
+
+            // Faction
+            modelBuilder.Entity<Faction>()
+                .HasIndex(f => f.Code)
+                .IsUnique();
+
+            modelBuilder.Entity<Faction>()
+                .Property(f => f.Code).IsRequired();
+            modelBuilder.Entity<Faction>()
+                .Property(f => f.Name).IsRequired();
+
+            // Vehicle
+            modelBuilder.Entity<Vehicle>()
+                .HasIndex(v => v.Code).IsUnique();
+            modelBuilder.Entity<Vehicle>()
+                .Property(v => v.Code).IsRequired();
+            modelBuilder.Entity<Vehicle>()
+                .Property(v => v.Name).IsRequired();
+
+            modelBuilder.Entity<Vehicle>()
+                .Property(v => v.ShellSpeed)
+                .HasDefaultValue(70f);
+            modelBuilder.Entity<Vehicle>()
+                .Property(v => v.ShellsCount)
+                .HasDefaultValue(20);
+            modelBuilder.Entity<Vehicle>()
+                .Property(v => v.DamageMin)
+                .HasDefaultValue(90f);
+            modelBuilder.Entity<Vehicle>()
+                .Property(v => v.DamageMax)
+                .HasDefaultValue(110f);
+            modelBuilder.Entity<Vehicle>()
+                .Property(v => v.ViewRange)
+                .HasDefaultValue(100f);
+            modelBuilder.Entity<Vehicle>()
+                .Property(v => v.EnginePower)
+                .HasDefaultValue(1f);
+
+            modelBuilder.Entity<Vehicle>()
+                .ToTable(t =>
+                {
+                    t.HasCheckConstraint("CK_Vehicles_ShellSpeed_Positive", "\"ShellSpeed\" > 0");
+                    t.HasCheckConstraint("CK_Vehicles_ViewRange_Positive", "\"ViewRange\" > 0");
+                    t.HasCheckConstraint("CK_Vehicles_EnginePower_Positive", "\"EnginePower\" > 0");
+                    t.HasCheckConstraint("CK_Vehicles_ShellsCount_NonNegative", "\"ShellsCount\" >= 0");
+                    t.HasCheckConstraint("CK_Vehicles_DamageMin_LessOrEqual_DamageMax", "\"DamageMin\" <= \"DamageMax\"");
+                });
+
+            modelBuilder.Entity<Vehicle>()
+                .HasOne(v => v.Faction)
+                .WithMany()
+                .HasForeignKey(v => v.FactionId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // VehicleResearchRequirement (предок -> нащадок; ResearchFrom прив'язане до Successor)
+            modelBuilder.Entity<Vehicle>()
+                .HasMany(v => v.ResearchFrom)
+                .WithOne(r => r.Successor)
+                .HasForeignKey(r => r.SuccessorVehicleId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<VehicleResearchRequirement>()
+                .HasOne(r => r.Predecessor)
+                .WithMany()
+                .HasForeignKey(r => r.PredecessorVehicleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<VehicleResearchRequirement>()
+                .HasIndex(r => new { r.PredecessorVehicleId, r.SuccessorVehicleId })
+                .IsUnique();
+
+            // UserVehicle
+            modelBuilder.Entity<UserVehicle>()
+                .HasIndex(uv => new { uv.UserId, uv.VehicleId }).IsUnique();
+
+            modelBuilder.Entity<UserVehicle>()
+                .HasIndex(nameof(UserVehicle.UserId), nameof(UserVehicle.IsActive))
+                .HasFilter("\"IsActive\" = TRUE")
+                .IsUnique();
+
+            modelBuilder.Entity<UserVehicle>()
+                .HasOne(uv => uv.User)
+                .WithMany()
+                .HasForeignKey(uv => uv.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserVehicle>()
+                .HasOne(uv => uv.Vehicle)
+                .WithMany()
+                .HasForeignKey(uv => uv.VehicleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // UserVehicleResearch
+            modelBuilder.Entity<UserVehicleResearch>()
+                .HasIndex(r => new { r.UserId, r.VehicleId })
+                .IsUnique();
+
+            modelBuilder.Entity<UserVehicleResearch>()
+                .HasOne(r => r.User)
+                .WithMany()
+                .HasForeignKey(r => r.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<UserVehicleResearch>()
+                .HasOne(r => r.Vehicle)
+                .WithMany()
+                .HasForeignKey(r => r.VehicleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            // MatchParticipant
+            modelBuilder.Entity<DedicatedServer>()
+                .HasIndex(server => server.LastHeartbeatUtc);
+
+            modelBuilder.Entity<DedicatedServer>()
+                .Property(server => server.ServerId)
+                .IsRequired();
+
+            modelBuilder.Entity<DedicatedServer>()
+                .Property(server => server.CredentialHash)
+                .IsRequired();
+
+            modelBuilder.Entity<UserSession>()
+                .HasIndex(session => session.RefreshTokenHash)
+                .IsUnique();
+
+            modelBuilder.Entity<UserSession>()
+                .HasIndex(session => new { session.UserId, session.RevokedAtUtc });
+
+            modelBuilder.Entity<ConnectionTicket>()
+                .HasIndex(ticket => ticket.TokenHash)
+                .IsUnique();
+
+            modelBuilder.Entity<ConnectionTicket>()
+                .HasIndex(ticket => new { ticket.ServerId, ticket.ExpiresAtUtc, ticket.RedeemedAtUtc });
+
+            modelBuilder.Entity<MatchParticipant>()
+                .HasOne(mp => mp.Match)
+                .WithMany()
+                .HasForeignKey(mp => mp.MatchId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<Match>()
+                .HasIndex(match => new { match.DedicatedServerId, match.EndedAt });
+
+            modelBuilder.Entity<MatchParticipant>()
+                .HasOne(mp => mp.User)
+                .WithMany()
+                .HasForeignKey(mp => mp.UserId)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<MatchParticipant>()
+                .HasOne(mp => mp.Vehicle)
+                .WithMany()
+                .HasForeignKey(mp => mp.VehicleId)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<MatchParticipant>()
+                .HasIndex(mp => new { mp.MatchId, mp.UserId })
+                .IsUnique();
+
+            // Map
+            modelBuilder.Entity<Map>()
+                .HasIndex(m => m.Code)
+                .IsUnique();
+
+            modelBuilder.Entity<Map>()
+                .Property(m => m.Code).IsRequired();
+            modelBuilder.Entity<Map>()
+                .Property(m => m.Name).IsRequired();
+        }
+    }
+}
