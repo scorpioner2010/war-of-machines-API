@@ -1,0 +1,10 @@
+/var/log/rav-staging/rav-server.log {
+    daily
+    rotate 14
+    compress
+    delaycompress
+    missingok
+    notifempty
+    copytruncate
+    create 0640 rav-staging-server rav-staging-server
+}
