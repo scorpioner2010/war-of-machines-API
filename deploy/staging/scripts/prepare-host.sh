@@ -54,7 +54,7 @@ fi
 export DEBIAN_FRONTEND=noninteractive
 apt-get update
 apt-get upgrade -y
-apt-get install -y ca-certificates curl gnupg jq openssl ufw iptables sysstat
+apt-get install -y ca-certificates curl gnupg jq openssl python3 ufw iptables sysstat
 if ! command -v docker >/dev/null; then
   install -m 0755 -d /etc/apt/keyrings
   curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
@@ -109,12 +109,24 @@ if [[ ! -e /etc/rav-staging/unity-server.env ]]; then
   server_id="$(cat /etc/rav-staging/secrets/server_id)"
   server_credential="$(cat /etc/rav-staging/secrets/server_credential)"
   api_host="$(sed -n 's/^RAV_STAGING_API_HOST=//p' "$env_target" | tail -n 1)"
+  server_address="$(sed -n 's/^RAV_STAGING_SERVER_ADDRESS=//p' "$env_target" | tail -n 1)"
+  server_region="$(sed -n 's/^RAV_STAGING_REGION=//p' "$env_target" | tail -n 1)"
+  [[ "$api_host" =~ ^[A-Za-z0-9.-]+$ && "$api_host" != *.invalid ]] || { echo "Set a verified staging API DNS hostname in $env_target." >&2; exit 2; }
+  [[ -n "$server_region" && "$server_region" =~ ^[A-Za-z0-9._-]+$ ]] || { echo "Set a valid staging region in $env_target." >&2; exit 2; }
+  python3 - "$server_address" <<'PY'
+import ipaddress
+import sys
+try:
+    ipaddress.IPv4Address(sys.argv[1])
+except ipaddress.AddressValueError:
+    raise SystemExit("RAV_STAGING_SERVER_ADDRESS must be the actual VPS public IPv4 address.")
+PY
   cat > /etc/rav-staging/unity-server.env <<EOF
 RAV_API_BASE=https://$api_host
 RAV_SERVER_ID=$server_id
 RAV_SERVER_CREDENTIAL=$server_credential
-RAV_SERVER_REGION=EU-STAGING
-RAV_SERVER_ADDRESS=REPLACE_WITH_VPS_PUBLIC_IPV4
+RAV_SERVER_REGION=$server_region
+RAV_SERVER_ADDRESS=$server_address
 RAV_SERVER_PORT=7770
 RAV_UTP_SERVER_COMMON_NAME=rav-staging-server
 EOF

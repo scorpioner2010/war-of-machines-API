@@ -2,7 +2,7 @@ name: rav-staging
 
 services:
   postgres-tls-init:
-    image: postgres:16.16-bookworm
+    image: postgres:17-bookworm
     user: "0:0"
     entrypoint: ["/bin/sh", "-ec"]
     command:
@@ -19,7 +19,7 @@ services:
     networks: [backend]
 
   postgres:
-    image: postgres:16.16-bookworm
+    image: postgres:17-bookworm
     restart: unless-stopped
     environment:
       POSTGRES_DB: ${RAV_STAGING_POSTGRES_DB:-rav_staging}
@@ -144,6 +144,12 @@ services:
       target: migrate
     profiles: [migration]
     restart: "no"
+    entrypoint: ["/bin/sh", "-ec"]
+    command:
+      - |
+        export DATABASE_URL="$$(cat /run/secrets/DATABASE_URL)"
+        export Database__RootCertificate=/run/secrets/postgres-ca.crt
+        exec dotnet ef database update --no-build --configuration Release --project RavApi.csproj
     environment:
       ASPNETCORE_ENVIRONMENT: Production
       Database__ApplyMigrationsOnStartup: "false"
@@ -155,7 +161,6 @@ services:
       postgres:
         condition: service_healthy
     networks: [backend]
-    command: ["database", "update", "--no-build", "--configuration", "Release", "--project", "RavApi.csproj"]
     logging: *bounded-logs
 
   seed:
@@ -165,7 +170,7 @@ services:
     entrypoint: ["/bin/sh", "-ec"]
     command:
       - |
-        dotnet RavApi.dll &
+        /app/entrypoint.sh &
         child=$$!
         trap 'kill -TERM "$$child" 2>/dev/null || true; wait "$$child" || true || true' EXIT
         for attempt in $$(seq 1 45); do

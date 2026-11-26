@@ -31,6 +31,9 @@ Configuration comes from standard ASP.NET Core providers plus `.env.local`, whic
 - `Cors:AllowedOrigins` - explicit browser origins; Unity does not need CORS.
 - `ForwardedHeaders:KnownProxies` - trusted reverse-proxy IPs for forwarded headers.
 - `Database:ApplyMigrationsOnStartup` and `Database:RunSeedOnStartup` - explicit startup operations; production defaults are false.
+- `Database:SeedDevelopmentFixtures` - opt-in for the default demo account and match; false by default, including local Development. Enable only for a disposable test database. Staging seeds maps/vehicles without the predictable `testuser/test123` account.
+- `Database:SslMode` - optional Npgsql TLS-mode override for URI and keyword connection strings; staging uses `VerifyFull` with the Altare database CA.
+- `Database:RootCertificate` - optional path to the PostgreSQL CA file used by Npgsql to validate the server certificate.
 - `Swagger:Enabled` - explicit non-development Swagger switch; default false.
 - `Logging:LogLevel:Default` - application default log level.
 - `Logging:LogLevel:Microsoft.AspNetCore` - ASP.NET Core log level.

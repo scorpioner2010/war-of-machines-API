@@ -1,4 +1,5 @@
 using System;
+using System.Globalization;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -66,14 +67,30 @@ builder.WebHost.ConfigureKestrel(options =>
 
 // ---------- DB ----------
 var databaseConnectionString = DatabaseConnectionStringFactory.Resolve(builder.Configuration);
+var databaseTlsServerName = builder.Configuration["RAV_DATABASE_TLS_SERVER_NAME"];
+if (!string.IsNullOrWhiteSpace(builder.Configuration["RAV_DATABASE_TUNNEL_LOCAL_PORT"])
+    && !string.Equals(databaseTlsServerName, "postgres", StringComparison.Ordinal))
+{
+    throw new InvalidOperationException("The Local API SSH tunnel requires the verified PostgreSQL TLS name 'postgres'.");
+}
+
 builder.Services.AddDbContext<AppDbContext>(opts =>
 {
     opts.UseNpgsql(
         databaseConnectionString,
-        npgsqlOptions => npgsqlOptions.EnableRetryOnFailure(
-            maxRetryCount: 5,
-            maxRetryDelay: TimeSpan.FromSeconds(10),
-            errorCodesToAdd: null));
+        npgsqlOptions =>
+        {
+            npgsqlOptions.EnableRetryOnFailure(
+                maxRetryCount: 5,
+                maxRetryDelay: TimeSpan.FromSeconds(10),
+                errorCodesToAdd: null);
+
+            if (!string.IsNullOrWhiteSpace(databaseTlsServerName))
+            {
+                npgsqlOptions.ConfigureDataSource(dataSource =>
+                    dataSource.UseSslClientAuthenticationOptionsCallback(options => options.TargetHost = databaseTlsServerName));
+            }
+        });
 });
 
 // ---------- Controllers + JSON (camelCase) ----------
@@ -297,7 +314,9 @@ InMemoryLogStore.Add(new LogEvent { Level = Microsoft.Extensions.Logging.LogLeve
 using (var scope = app.Services.CreateScope())
 {
     var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
-    if (app.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup"))
+    bool applyMigrations = app.Configuration.GetValue<bool>("Database:ApplyMigrationsOnStartup");
+    bool runSeed = app.Configuration.GetValue<bool>("Database:RunSeedOnStartup");
+    if (applyMigrations)
     {
         db.Database.Migrate();
         InMemoryLogStore.Add(new LogEvent
@@ -306,10 +325,34 @@ using (var scope = app.Services.CreateScope())
             Message = "PostgreSQL database migrated."
         });
     }
-
-    if (app.Configuration.GetValue<bool>("Database:RunSeedOnStartup"))
+    else if (app.Environment.IsDevelopment())
     {
-        SeedData.Initialize(db);
+        try
+        {
+            string[] pendingMigrations = db.Database.GetPendingMigrations().ToArray();
+            if (pendingMigrations.Length > 0)
+            {
+                throw new InvalidOperationException(
+                    "Local API startup blocked: rav_staging schema is behind this build by "
+                    + pendingMigrations.Length.ToString(CultureInfo.InvariantCulture)
+                    + " EF Core migration(s). No migrations or seed data were applied.");
+            }
+        }
+        catch (InvalidOperationException)
+        {
+            throw;
+        }
+        catch (Exception exception)
+        {
+            throw new InvalidOperationException(
+                "Local API startup blocked: rav_staging schema compatibility could not be verified. No migrations or seed data were applied.",
+                exception);
+        }
+    }
+
+    if (runSeed)
+    {
+        SeedData.Initialize(db, app.Configuration.GetValue<bool>("Database:SeedDevelopmentFixtures"));
         InMemoryLogStore.Add(new LogEvent { Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Seed data ensured." });
     }
 }

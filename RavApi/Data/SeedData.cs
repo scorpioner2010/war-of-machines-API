@@ -6,7 +6,7 @@ namespace RavApi.Data
 {
     public static class SeedData
     {
-        public static void Initialize(AppDbContext db)
+        public static void Initialize(AppDbContext db, bool includeDevelopmentFixtures)
         {
             // --- Factions ---
             var iron = db.Factions.FirstOrDefault(f => f.Code == "iron_alliance")
@@ -488,7 +488,7 @@ namespace RavApi.Data
             EnsureLink(nvL3ColossusHarrow.Id, nvL4ColossusEclipse.Id, requiredXp: 6500);
 
             // --- Players ---
-            if (!db.Players.Any())
+            if (includeDevelopmentFixtures && !db.Players.Any())
             {
                 var user = new Player
                 {
@@ -527,7 +527,7 @@ namespace RavApi.Data
             }
 
             // --- Demo Match ---
-            if (!db.Matches.Any())
+            if (includeDevelopmentFixtures && !db.Matches.Any())
             {
                 var m = new Match
                 {

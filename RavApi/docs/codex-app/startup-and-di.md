@@ -20,11 +20,13 @@
 - `Cors:AllowedOrigins` - explicit browser origins; an empty list allows no CORS origins. Unity is not authenticated by CORS.
 - `ForwardedHeaders:KnownProxies` - only these proxy IPs may supply forwarded address/proto values.
 - `Database:ApplyMigrationsOnStartup` and `Database:RunSeedOnStartup` - explicit startup switches, both false in base configuration.
+- `Database:SeedDevelopmentFixtures` - separately gates the local demo account and match; false by default, including local Development. Enable only for a disposable test database.
+- `Database:SslMode` / `Database:RootCertificate` - optional Npgsql TLS verification override and CA path.
 
 ## Dependencies
 - `Microsoft.EntityFrameworkCore` with `Npgsql.EntityFrameworkCore.PostgreSQL`; retry-on-failure is enabled with 5 retries and 10 second max delay.
 - Middleware order in `Program.cs`: exception handler, trusted forwarded headers, configured CORS, rate limiter, static files, conditional Swagger, authentication, authorization, controllers, and protected admin minimal routes.
-- Startup calls `db.Database.Migrate()` only when `Database:ApplyMigrationsOnStartup=true`, then seeds only when `Database:RunSeedOnStartup=true`.
+- Startup calls `db.Database.Migrate()` only when `Database:ApplyMigrationsOnStartup=true`, then seeds maps/vehicles only when `Database:RunSeedOnStartup=true`. The default test account/demo match additionally require `Database:SeedDevelopmentFixtures=true`, which is disabled by default in local Development.
 - Dedicated Server registry, user sessions, and connection tickets are EF/PostgreSQL entities, not in-memory state.
 
 ## Routes / Contracts

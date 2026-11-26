@@ -80,11 +80,11 @@ sudo /opt/rav-staging/scripts/deploy-unity-release.sh \
   7770 https://<staging-api-host>/health/ready
 ```
 
-The Unity script rejects unsafe archive paths and special files, verifies required Linux build/runtime files, atomically switches the `current` symlink and restores the prior symlink if the service check fails. It never deletes old releases.
+The Unity script rejects unsafe archive paths and special files, verifies required Linux build/runtime files, atomically switches the `current` symlink and restores the prior symlink if the service check fails. It never deletes old releases. It also creates `Logs` as a symlink into `/var/log/rav-staging/unity`, so the existing relative gameplay diagnostics can write without making release files mutable. The Unity health check allows up to 45 seconds for UDP 7770 to bind after systemd starts the process and fails early if the service exits.
 
 ## 5. Smoke checks and observations
 
-After both services are approved and running, execute the write-confirmed staging smoke test. It creates a staging-only test player and match that are not automatically deleted, and tests API liveness/readiness, verified PostgreSQL TLS, UDP socket, server registration/heartbeat, ticket issuance/redemption/replay rejection and match record creation. Its write action is limited to staging.
+After both services are approved and running, execute the write-confirmed staging smoke test. It creates a uniquely named temporary staging player and backend match to test registration/login, JWT profile, starter resources/vehicle, verified PostgreSQL TLS, UDP socket, server registration/heartbeat, ticket issue/redemption/replay rejection and match creation. An EXIT cleanup removes the temporary player's sessions, tickets, owned/researched vehicles, profile, match participants and test match, including when a check fails after registration. It does not remove the real Dedicated Server registry row or catalog data. Verify the cleanup result in the script output and confirm the player/match counts return to their pre-test values.
 
 ```sh
 sudo env RAV_STAGING_SMOKE_WRITE_CONFIRM=CREATE_TEST_USER_AND_MATCH_IN_RAV_STAGING \

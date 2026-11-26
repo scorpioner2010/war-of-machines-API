@@ -39,23 +39,23 @@ namespace RavApi.Controllers
 
         public class RegisterRequest
         {
-            [System.ComponentModel.DataAnnotations.Required]
-            [System.ComponentModel.DataAnnotations.StringLength(32, MinimumLength = 3)]
+            [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Login is required.")]
+            [System.ComponentModel.DataAnnotations.StringLength(32, MinimumLength = 4, ErrorMessage = "Login must be between 4 and 32 characters.")]
             public string Username { get; set; } = "";
 
-            [System.ComponentModel.DataAnnotations.Required]
-            [System.ComponentModel.DataAnnotations.StringLength(128, MinimumLength = 8)]
+            [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Password is required.")]
+            [System.ComponentModel.DataAnnotations.StringLength(128, MinimumLength = 4, ErrorMessage = "Password must be between 4 and 128 characters.")]
             public string Password { get; set; } = "";
         }
 
         public class LoginRequest
         {
-            [System.ComponentModel.DataAnnotations.Required]
-            [System.ComponentModel.DataAnnotations.StringLength(32, MinimumLength = 1)]
+            [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Login is required.")]
+            [System.ComponentModel.DataAnnotations.StringLength(32, MinimumLength = 4, ErrorMessage = "Login must be between 4 and 32 characters.")]
             public string Username { get; set; } = "";
 
-            [System.ComponentModel.DataAnnotations.Required]
-            [System.ComponentModel.DataAnnotations.StringLength(128, MinimumLength = 1)]
+            [System.ComponentModel.DataAnnotations.Required(ErrorMessage = "Password is required.")]
+            [System.ComponentModel.DataAnnotations.StringLength(128, MinimumLength = 4, ErrorMessage = "Password must be between 4 and 128 characters.")]
             public string Password { get; set; } = "";
         }
 

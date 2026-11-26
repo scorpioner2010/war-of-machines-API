@@ -309,7 +309,7 @@ using (var scope = app.Services.CreateScope())
 
     if (app.Configuration.GetValue<bool>("Database:RunSeedOnStartup"))
     {
-        SeedData.Initialize(db);
+        SeedData.Initialize(db, app.Configuration.GetValue<bool>("Database:SeedDevelopmentFixtures"));
         InMemoryLogStore.Add(new LogEvent { Level = Microsoft.Extensions.Logging.LogLevel.Information, Message = "Seed data ensured." });
     }
 }

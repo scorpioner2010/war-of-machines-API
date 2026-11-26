@@ -9,11 +9,13 @@ namespace RavApi.Infrastructure
             var databaseUrl = configuration["DATABASE_URL"];
             if (!string.IsNullOrWhiteSpace(databaseUrl))
             {
-                return ConvertToConnectionString(databaseUrl);
+                return ConvertToConnectionString(databaseUrl, configuration);
             }
 
             var configuredConnectionString = configuration.GetConnectionString("DefaultConnection");
-            return string.IsNullOrWhiteSpace(configuredConnectionString) ? null : configuredConnectionString;
+            return string.IsNullOrWhiteSpace(configuredConnectionString)
+                ? null
+                : ConvertToConnectionString(configuredConnectionString, configuration);
         }
 
         public static string Resolve(IConfiguration configuration)
@@ -27,11 +29,13 @@ namespace RavApi.Infrastructure
             throw new InvalidOperationException("Database connection string is not configured. Set DATABASE_URL or ConnectionStrings__DefaultConnection.");
         }
 
-        private static string ConvertToConnectionString(string rawValue)
+        private static string ConvertToConnectionString(string rawValue, IConfiguration configuration)
         {
             if (LooksLikeKeywordValueConnectionString(rawValue))
             {
-                return rawValue;
+                var keywordBuilder = new NpgsqlConnectionStringBuilder(rawValue);
+                ApplyTlsOverrides(keywordBuilder, configuration);
+                return keywordBuilder.ConnectionString;
             }
 
             var normalizedValue = NormalizeDatabaseUrl(rawValue);
@@ -75,10 +79,12 @@ namespace RavApi.Infrastructure
                 {
                     if (pair.Key.Equals("sslmode", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (Enum.TryParse<SslMode>(pair.Value.ToString(), true, out var sslMode))
-                        {
-                            builder.SslMode = sslMode;
-                        }
+                        builder.SslMode = ParseSslMode(pair.Value.ToString());
+                    }
+                    else if (pair.Key.Equals("sslrootcert", StringComparison.OrdinalIgnoreCase) ||
+                             pair.Key.Equals("rootcertificate", StringComparison.OrdinalIgnoreCase))
+                    {
+                        builder.RootCertificate = pair.Value.ToString();
                     }
                     else if (pair.Key.Equals("trustservercertificate", StringComparison.OrdinalIgnoreCase) ||
                              pair.Key.Equals("trust_server_certificate", StringComparison.OrdinalIgnoreCase))
@@ -92,7 +98,38 @@ namespace RavApi.Infrastructure
                 }
             }
 
+            ApplyTlsOverrides(builder, configuration);
             return builder.ConnectionString;
+        }
+
+        private static void ApplyTlsOverrides(NpgsqlConnectionStringBuilder builder, IConfiguration configuration)
+        {
+            var sslMode = configuration["Database:SslMode"];
+            if (!string.IsNullOrWhiteSpace(sslMode))
+            {
+                builder.SslMode = ParseSslMode(sslMode);
+            }
+
+            var rootCertificate = configuration["Database:RootCertificate"];
+            if (!string.IsNullOrWhiteSpace(rootCertificate))
+            {
+                builder.RootCertificate = rootCertificate;
+            }
+        }
+
+        private static SslMode ParseSslMode(string value)
+        {
+            var normalizedValue = value
+                .Trim()
+                .Replace("-", string.Empty, StringComparison.Ordinal)
+                .Replace("_", string.Empty, StringComparison.Ordinal);
+
+            if (Enum.TryParse<SslMode>(normalizedValue, true, out var sslMode))
+            {
+                return sslMode;
+            }
+
+            throw new InvalidOperationException("PostgreSQL SSL mode is invalid. Use disable, allow, prefer, require, verify-ca, or verify-full.");
         }
 
         private static bool LooksLikeKeywordValueConnectionString(string value)
