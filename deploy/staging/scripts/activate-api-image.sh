@@ -5,6 +5,10 @@ if [[ $# -ne 1 ]]; then echo "Usage: $0 <staging-api-image>" >&2; exit 2; fi
 image="$1"
 [[ "$image" =~ ^rav-api:staging-[A-Za-z0-9][A-Za-z0-9._-]{0,63}$ ]] || { echo "Invalid staging API image tag." >&2; exit 2; }
 script_dir="/opt/rav-staging/scripts"
+# This helper is uploaded to /home/ravadmin/rav-staging-incoming before activation.
+# Do not infer the deployment root from $0 (which points to that upload directory).
+RAV_STAGING_ROOT="/opt/rav-staging"
+export RAV_STAGING_ROOT
 source "$script_dir/lib.sh"
 [[ "$RAV_STAGING_ROOT" == "/opt/rav-staging" && "$RAV_STAGING_DB" == "rav_staging" ]] || { echo "Refusing to activate outside the RAV staging deployment." >&2; exit 2; }
 docker image inspect "$image" >/dev/null || { echo "Staged API image is not present; no service changed." >&2; exit 2; }

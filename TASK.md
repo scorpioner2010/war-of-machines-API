@@ -136,3 +136,63 @@
 - A short invalid registration payload returned HTTP 400 with clear 4-character minimum messages for login and password. It did not create an account or write a valid registration.
 - No Netcup services or database data were changed; no commit/push. Account creation remains untested by design.
 - Status: local API validation fix active.
+## 2026-11-26 — Rewrite recent commit subjects (requested)
+**Request:** Review the latest 10 commits in each of the RAV API and Unity repositories, identify what each commit changed, and replace vague subjects with clear, accurate names.
+**Scope:** API repo and Unity repo; preserve all file/tree changes and commit order. Do not create new content commits. Inspect local working-tree changes before rewriting. Do not rewrite commits outside the most recent 10 per repository. Check remote divergence before deciding whether local rewording can be safely synchronized.
+**Acceptance:** 20 recent commits reviewed; each gets a concise, evidence-based subject; branch trees remain unchanged; final status and any remote synchronization limitation reported. No unrelated edits.
+**Status:** IN_PROGRESS.
+### Commit subject review checkpoint — 2026-11-26
+- Reviewed the latest 10 first-parent commits, including source/config/docs diffs and generated-only commits. All are unsigned, single-parent commits. `main` exactly matches `origin/main`; only this task's uncommitted `TASK.md` journal edit is present.
+- Proposed subjects, newest to oldest:
+  1. `Prepare RAV staging API startup and release tooling` — 4d506d8
+  2. `Rebrand the API as RavApi and move to .NET 10` — 8fde90d
+  3. `Increase Nova biped vehicle engine power` — d7ef0a1
+  4. `Harden API authentication, tickets, and server credentials` — 906eab0
+  5. `Add Codex local API log placeholders` — f24f966
+  6. `Add vehicle engine power data and migration` — 9228d6d
+  7. `Refresh checked-in API build artifacts` — eea3f49
+  8. `Add player statistics and vehicle roster endpoints` — c87cc27
+  9. `Persist match rewards in participant results` — ce82830
+  10. `Add vehicle traverse acceleration data` — 9b0fde2
+- Rewriting local subjects changes commit IDs. Because all 10 are already on `origin/main`, synchronizing them would require a force update of remote `main`; do not push without explicit approval. Next: rewrite local commit objects while preserving tree, author, and committer metadata; verify exact tree equality and keep working-tree changes.
+- Status: IN_PROGRESS.
+### Commit subject rewrite — completed locally — 2026-11-26
+- Rewrote subjects for the latest 10 commits on local main after reviewing each commit's changes.
+- Verified each rewritten commit retains the original tree, parent sequence, author/committer metadata, and commit message body; only the first subject line changed.
+- Preserved existing uncommitted work. No content files were changed by the history rewrite.
+- origin/main remains untouched. Local main is now 10 commits ahead and 10 behind because rewritten history has new hashes; publishing it would require a force update of origin/main.
+- No push performed. Status: LOCAL REWRITE COMPLETED; REMOTE SYNCHRONIZATION NOT DONE.
+
+## 2026-11-27 — Diagnose and repair Netcup deployment workflow — IN_PROGRESS
+- **Request:** Local mode works; Netcup/server workflow fails. Reproduce and fix the failures so the server deployment workflow completes reliably, using the Development Control Panel and existing deployment tooling.
+- **Scope:** Diagnose the screenshot failure at Netcup API image build, trace Execute All/API/server sequencing, correct root causes, and run focused real staging checks. Preserve user changes and do not alter the database, production, security settings, or paid resources.
+- **Acceptance:** Identify exact build/deploy/start failure; fix the smallest relevant cause; verify API image build and the selected remote workflow through real panel logs/status checks; report any parts not safely or technically verifiable.
+- **Start:** 2026-11-27 (Asia/Manila). **Status:** IN_PROGRESS.
+- **Next:** Inspect current worktree, active panel/full logs and deployment/build configuration; reproduce only the failing Netcup step before making changes.
+
+### Diagnostic checkpoint — 2026-11-27 (Asia/Manila)
+- Screenshot/live operation log confirms Netcup API image build failed before any upload or remote change: Docker could not open the desktop-linux named pipe because it did not exist.
+- Local Docker Desktop 29.8.2 was already installed but not running. Its configured context is desktop-linux. Started the existing Docker Desktop application; the Linux engine now responds to docker info.
+- Inspected Docker containers after startup: all listed containers were already exited, including old local RAV services. No container was started/stopped, no volumes/data were touched, and no remote service changed.
+- The panel currently has no daemon startup path before running docker build. Plan: add a bounded preflight that starts the already-installed Docker Desktop only when the Linux engine is unavailable, waits for docker info to report linux, and returns a specific error if the engine cannot become ready. Then build the image via the panel and continue the selected staging workflow.
+- Status: IN_PROGRESS; API image build and remote workflow have not yet been retried.
+### Implementation checkpoint — 2026-11-27 (Asia/Manila)
+- Changed Unity Editor panel: before Netcup API image build, it now probes Docker for an active Linux engine, starts the existing Docker Desktop only if needed, and polls readiness with a 120-second bound. Failure messages now identify missing/unready Docker Desktop rather than silently treating every engine absence as an API build error.
+- Source diff is limited to Assets/Editor/RAVDevelopmentControlPanel.cs; focused git diff --check passed. Unity Editor is open and not in Play Mode; Editor.log has no C# compilation errors after the reload.
+- The Linux Docker engine is currently running, so the next non-destructive check is to build and inspect the staging API image. No deployment or remote service change will occur during that check.
+- Status: IN_PROGRESS.
+### Validation checkpoint — 2026-11-27 (Asia/Manila)
+- Docker Linux engine 29.8.2 became ready on desktop-linux. The staging API image built successfully from the API repository using the same Dockerfile/build context as the panel: rav-api:staging-20261126172515, linux/amd64, manifest digest sha256:8b8c0fae3744c726144842489e09ef0137b044e4d003ec29e0b758b29d586ab7. The Dockerfile is multi-stage; runtime only copies published output, health probe, and entrypoint. .dockerignore excludes env files, private keys, certificates, and production secrets.
+- Panel's 01:23:28 Netcup refresh passed HTTPS API health, PostgreSQL SSH health, and fresh Dedicated Server heartbeat.
+- Strict-host-checked SSH read-only check returned the Dedicated Server systemd service active; remote ss showed RAVServer.x86_64 bound to UDP 7770 on 0.0.0.0.
+- No staging API/server service was restarted or deployed. No database writes, container starts, or volume changes occurred; existing containers remain exited.
+- The Unity panel source change compiled/reloaded without reported C# errors and focused git diff --check passed. The full Execute All button was not safely retried: Computer Use detected simultaneous user input and an unrelated browser sign-in surface became foreground, so UI input was stopped to avoid touching that session.
+- Remaining: actual post-fix panel Build/API + Deploy/Start orchestration has not been observed end-to-end. The underlying Docker build and current remote readiness are verified; keep task IN_PROGRESS until the panel operation is safely rerun.
+- Additional image configuration check: the API appsettings connection string is empty; runtime image does not inherit production credentials from appsettings. No secret values were printed or uploaded.
+- Current result: the original failure cause is handled in source, a real Linux/amd64 API image build passed, and the live staging server/API/database are healthy. Remaining acceptance item is an actual post-fix Execute All panel run; no active deployment was needed to resolve the local Docker-engine prerequisite.
+
+### Completion checkpoint — 2026-11-27 (Asia/Manila)
+- Fixed the staging API activation guard in deploy/staging/scripts/activate-api-image.sh: the helper is invoked from the restricted incoming directory, so it now explicitly establishes /opt/rav-staging before loading lib.sh. The explicit rav_staging database guard remains active.
+- Bash syntax validation and focused diff checks passed.
+- Verified through the Unity panel workflow: fresh API image built, staged, and activated with rollback protection; HTTPS health/readiness passed. PostgreSQL and Caddy were not restarted and the database schema/data were not changed.
+- Result: the Netcup API activation step and complete staging workflow passed. No commit or push.
