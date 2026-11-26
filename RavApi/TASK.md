@@ -374,3 +374,276 @@
 - Verified the displayed repositories are the existing paths D:\Programing\UnityProjects\rav-unity and D:\Programing\ServerProjects\rav-api. No duplicate clones were created and no repository source files were edited.
 - HTTPS fetch updated/checks the existing origin refs; both local main branches are at 0 ahead / 0 behind origin/main, so no commit needed merging. Existing working-tree changes remain preserved.
 - **Status: COMPLETED** for making both RAV repositories visible/open in Fork.
+## 2026-11-24 — RAV Stage 3A Hetzner CX33 provider switch
+- **Status:** IN_PROGRESS.
+- **User request:** Replace the canceled OVHcloud VPS order with a Hetzner Cloud CX33 staging VPS evaluation and prepare up to, but not including, payment.
+- **Scope:** Verify current official CX33 availability, Germany/Finland regions, x86-64 specs, public IPv4, hourly/monthly price and applicable VAT; inspect account/identity/prepayment/refund requirements and future x86 resize options. Compare only available x86 plans if CX33 is unavailable, without automatic upgrade.
+- **Safety:** Do not create a paid server/resource or authorize payment. Do not accept legally binding contract terms. Use only accurate owner-provided identity/address data; pause for user input where the true account details or personal verification are required. Do not start Stage 3B or change production/database.
+- **Acceptance:** Provide official-source evidence, account/verification status and any exact owner action; reach the final checkout review only if possible without payment, account misrepresentation, or legal acceptance.
+- **Initial known state:** OVHcloud order #23370514 was canceled per owner; the separate $14.50 refund case remains unresolved. Existing RAV deployment bundle is prepared; no active VPS endpoint is available.
+- **Next:** Verify official Hetzner plan/pricing and account requirements; use the in-app browser for any needed sign-in or owner-controlled identity steps.### Findings — Hetzner catalog and account setup — 2026-11-24
+
+- Hetzner’s public Cost-Optimized page lists CX33 as currently unavailable. It shows 4 vCPU, Intel/AMD x86, 8 GB RAM, 80 GB NVMe, 20 TB included traffic, and EU-central sites NBG1 (Germany) and HEL1 (Finland). Public availability is unavailable for CX33; account-specific stock was not checked because registration still needs the owner’s payment method.
+- Current published base pricing for CX33 is €8.49/month or €0.0136/hour excluding VAT. A Primary IPv4 is separate at €0.50/month or €0.0008/hour, totaling €8.99/month / €0.0144/hour before VAT. The German 19% example is €10.70/month; the account’s actual tax treatment depends on the truthful billing profile. Helsinki’s November 2026 15% price reduction applies only to CPX and CCX, not CX.
+- Hetzner bills hourly up to a monthly cap and invoices retroactively; powered-off servers continue to bill until deleted. IPv4 is separately billed.
+- The closest lower-cost x86 CX23 is also shown unavailable. No currently available x86 alternative within the target budget could be confirmed. Regular Performance CPX plans exceed the target budget at published euro rates.
+- Registration requires valid email, contact details and billing address; phone may be requested for advanced verification. Hetzner may request ID verification or credit-card prepayment. Unused top-up credit is generally refunded only after the whole account is closed and outstanding invoices are paid; top-ups do not have invoices and do not make unavailable products available.
+- The owner completed Hetzner’s browser security check. The owner-provided Ukrainian individual profile was submitted; EUR was selected (Hetzner states this currency cannot be changed after registration). Account UI offers English or German, not Ukrainian. The payment page currently offers credit card; no card data, payment, final account completion, or server creation was performed.
+- x86 rescaling can move between compatible x86 plans, including shared and dedicated resources. CPU vendor is not fixed for CX. Server location cannot be changed in place; disk cannot be reduced below the existing disk size. No 20-player performance claim is made before RAV load testing.
+- **Gate:** Hetzner account registration is waiting for the owner to complete payment-method setup and final account step. Confirm exact account-specific availability, location and tax-inclusive price afterward. No VPS was created; Stage 3B remains NOT STARTED.
+### Hetzner Console diagnosis — 2026-11-24
+
+- The owner’s Hetzner Console opens normally. The Default project has 0 resources; there are no invoices or current transactions, and the account credit page shows USD $0.00. This is not evidence of a server or purchase failure. A separate pending card authorization was not checked.
+- The account currency is currently USD in the billing pages and server configurator, despite EUR having been selected during the earlier signup form. Hetzner says currency is fixed after account registration; do not try to change it or create a duplicate account without the owner deciding.
+- The Console displays a recommendation to enable 2FA; the project and server configurator remain accessible. The email page asks for an address reachable independently of Hetzner products; it is a contact reminder, separate from server availability.
+- In the unsubmitted server configurator, the Cost-Optimized x86 rows are disabled in HEL1 (Helsinki), NBG1 (Nuremberg), and FSN1 (Falkenstein), including CX33 (4 shared x86 vCPU, 8 GB, 80 GB NVMe). No server was created; the assistant did not click Create & Buy now.
+- Regular Performance x86 plans are selectable. In HEL1: CPX02 is $5.99/mo (1 vCPU, 1 GB, 20 GB), CPX12 $10.99/mo (1 vCPU, 2 GB, 40 GB), CPX22 $19.49/mo (2 vCPU, 4 GB, 80 GB), CPX32 $35.49/mo (4 vCPU, 8 GB, 160 GB). In Germany FSN1/NBG1: $7.49, $13.49, $22.99, and $41.99 respectively. Primary IPv4 adds $0.60/mo in this USD account; Console prices exclude VAT. The budget-near CPX12 is far below the required resources; CPX32 matches CPU/RAM but is far over budget. No suitable available x86 plan within budget was found.
+- The browser page at account/mail is an email-address settings page, not a rejection screen. Verification is not explicitly confirmed from the status page, but no verification block is visible in Console now.
+- **Status:** The owner has not misconfigured the Ukrainian contact profile. The blocker is Hetzner’s account-specific CX inventory and the account’s fixed USD billing currency; no server/payment was initiated. Await the owner’s direction on currency and whether to use a higher-priced CPX32 or wait for CX stock. Stage 3B remains NOT STARTED.
+
+## 2026-11-25 — RAV Edgegap free-trial deployment evaluation
+- **Status:** IN_PROGRESS.
+- **User request:** Evaluate the existing Edgegap account/free trial and prepare/test a separate Linux AMD64 RAV Unity Dedicated Server deployment, using no paid resources and no production changes.
+- **Scope:** Check Edgegap account/trial limits and European UDP deployment support; audit the existing RAV Unity Linux build and API integration; prepare a separate Edgegap container/deployment configuration only if it does not alter the production bundle; verify UDP 7770, FishNet/DTLS, endpoint/port mapping, and safe smoke tests within the free-trial allowance; update Edgegap/deployment docs.
+- **Safety:** Do not create a new account, request or handle passwords/codes, bypass CAPTCHA/verification, add billing/card data, incur charges, disable TLS/DTLS validation, alter gameplay without need, modify production, or run tests beyond verified free limits. Stop deployments after authorized free tests. Preserve all pre-existing dirty files and journal history; no commit/reset/clean.
+- **Acceptance:** Record account/trial status and actual limits; validate only existing artifacts; prepare and, if safely free and compatible, test an isolated Edgegap staging deployment; clearly mark anything blocked by credentials, plan limits, endpoint compatibility, or unavailable VPS/API staging.
+- **Initial state:** No Edgegap-specific entry was present in this journal. Hetzner Stage 3A remains IN_PROGRESS in its existing separate entry; do not close or overwrite it.
+- **Next:** Inspect Edgegap account in a new browser tab and verify free-trial terms before creating resources; inspect repository status/artifacts before any edits.## 2026-11-25 2026-11-25 02:52:41.000 +08:00 — RAV Altare free hosting preparation
+- **Status:** IN_PROGRESS.
+- **User request:** Inspect Altare free hosting and prepare the existing RAV Unity FishNet Dedicated Server for possible $0 deployment, without spending Bolts or changing production.
+- **Scope:** Audit Altare account/products, free-plan access, Workstations availability, Docker deployment support, UDP 7770/DTLS/public endpoint, runtime behavior, regions and limits; inspect existing Unity/API repositories and build; prepare separate Altare deployment files only if technically suitable and free; document validation and blockers.
+- **Safety:** Strict budget $0. Never upgrade, add a payment method, buy or consume Bolts, enable automatic billing, or create resources when cost is unclear. Do not change production auth/matchmaking/database, run production migrations, expose PostgreSQL, embed secrets, disable TLS/DTLS validation, or claim 20-slot support without load tests. Preserve working-tree changes and all task history; no commit/reset/clean.
+- **Acceptance:** Verify platform capabilities from the authenticated dashboard and official docs; inspect actual RAV artifact/source paths and compatibility; create only isolated deployment artifacts within existing repositories if appropriate; run only safe local validations; report READY FOR DEPLOYMENT / READY FOR LIMITED TESTING / NOT SUITABLE based on verified UDP/DTLS and cost constraints.
+- **Initial state:** Unity and API repositories already contain unrelated in-progress task journal entries, including Hetzner and Edgegap work; leave those entries untouched. No Altare-specific workflow was found in the Codex memory archive.
+- **Next:** Open the official Altare console in a new in-app browser tab for the user’s login, then verify account/plan before inspecting or creating any platform resource.
+
+#### Altare login handoff — 2026-11-25
+- Opened the official console at `https://console.altare.gg/apps` in a new in-app browser tab; it redirected to the Altare login page.
+- The user must authenticate in the browser. No username, password, passkey, or code was entered or requested in chat. No account or hosting settings were changed.
+- The tab is marked for handoff and awaits the user returning after login.
+- **Next:** Once the user confirms the console is open, inspect account/products and free-plan limits before any resource creation; continue the repository audit only after the account status is known.#### Altare free-plan/platform audit checkpoint — 2026-11-25
+- Authenticated as Taras_Samarin in the Default team; team plan is **Always Free**, usage is 0/4 GiB memory, 0%/125% CPU, 0/40 GiB disk, 0/2 app slots, and no apps exist. The dashboard shows 50 Bolts; none were spent.
+- Account → Experiments shows Workstations beta **All 30 seats taken; 2,408 on the waitlist**. No waitlist join was submitted. Official beta docs say early testers receive 2 shared vCPU, 4 GB RAM, 60 GB disk, up to two workstations, free within the included amount, with London as the only region; above that requires billing/card.
+- Official Workstations networking docs support up to 10 raw TCP/UDP public ports, externally mapped from 46000–47999 to chosen internal ports on a per-workstation hostname. This would fit UDP 7770 in principle, but this account has no beta seat.
+- Official Docker Apps docs explicitly say only TCP traffic reaches an app. GitHub App Hosting is web/API/worker oriented and listens on PORT; it is not a raw UDP server entry point.
+- Sandboxes are persistent Linux systems, but not full VMs: no systemd or Docker inside; long-running processes need tmux/nohup. Their extra public ports require Bolts under the documented store/resource pricing. No Bolts may be used, so no public UDP allocation can be attempted.
+- Altare Go provides 8 GB RAM, 4 CPUs, 40 GB disk for at most 12 hours, is started through CLI, and public exposure is HTTPS-only. It is not a persistent production server path and no Go machine was started because the task forbids resources of unclear cost.
+- Console/status page reports the Nov 21 heavy-demand incident affecting app deployments, sandboxes, Altare Go and Console; dashboard showed 0/49 nodes up/unknown. No resource or app was created, and the app-creation wizard did not finish loading.
+- **Decision so far:** No currently available $0 path is verified for the required always-on UDP/DTLS server: Docker/GitHub apps are TCP-only; the only documented free raw-UDP route is Workstations beta, for which this account is waitlisted. Do not create an app, sandbox, workstation or Go machine; do not consume the 50 Bolts.
+- **Next:** Inspect actual Unity/API repos, existing Linux build(s), and deployment documentation; preserve all existing changes. Determine whether the existing build is current and what can be validated locally without an Altare deployment.
+
+
+#### Altare hosting assessment closeout — 2026-11-25
+- **Status:** COMPLETED for the requested platform feasibility assessment; deployment NOT STARTED.
+- Account is Always Free with 0 usage and no apps; 50 Bolts remain untouched. Workstations beta is full and this account is waitlisted. The only documented free raw UDP path is therefore unavailable to this account. Docker/GitHub Apps are TCP-only; Sandboxes and Altare Go do not meet the persistent zero-cost UDP requirement.
+- RAV statically configures FishyUnityTransport for UDP 7770 with encryption enabled. Existing registration advertises the same port used for the internal bind; no separate external mapped-port setting exists.
+- The November 22 RAV Linux build predates Unity HEAD on November 24 and is not accepted as a current deployment artifact. No Docker image, headless/runtime, UDP, DTLS, API, or load test was run.
+- No API, production service, database, paid resource, or Bolt was changed or used. Deployment documentation was updated here.
+- **Decision:** NOT SUITABLE for the current Altare account under the strict $0 constraint. Do not deploy. Re-evaluate only after actual Workstations beta access and port mapping compatibility are available.
+
+
+## 2026-11-25 03:20:50 +08:00 — RAV AlienX Cloud Free Lite assessment
+- **Status:** IN_PROGRESS.
+- **User request:** Evaluate AlienX Cloud free Lite for a RAV Unity Dedicated Server and prepare only an isolated, free deployment path if the provider supports actual UDP/DTLS.
+- **Scope:** Review the backend server registration, heartbeat and ticket integration; inspect current API and Unity deployment artifacts; document provider compatibility, region/network restrictions, account request status and runtime blockers.
+- **Safety:** Strict $0. Do not create a paid or unclear-cost resource, add payment details, alter production/auth/matchmaking/database, run production migrations, expose PostgreSQL or secrets, disable TLS/DTLS, or claim untested capacity. Preserve all existing changes and task journal history; no commit/reset/clean.
+- **Acceptance:** Verify official AlienX Lite and networking terms, current RAV API/Unity integration, artifact freshness and deployment feasibility; report tests honestly and do not provision unless every zero-cost/network prerequisite is confirmed.
+- **Initial state:** API deployment documentation and TASK.md contain prior in-progress OVH/Hetzner/Edgegap/Altare work and uncommitted changes. Leave those records and user changes intact.
+- **Start:** 2026-11-25 03:20:50 +08:00
+- **Next:** Inspect repository status, current API integration and Linux build dates; append this task’s findings to deployment documentation.
+
+
+### AlienX browser findings — 2026-11-25 03:21:55 +08:00
+### AlienX account/network checkpoint
+- The authenticated panel shows no existing server and Cloud access is invitation-only. A single free access request was submitted; panel confirms ticket #93 is waiting for staff. No VM or paid resource was created.
+- The panel advertises Lite as free: 1 VM, 1 vCPU, 2 GB RAM, 30 GB disk, 2 projects, 10 WAN ports, 10 Mbit/s; available OS list includes Ubuntu 24.04 LTS.
+- Official networking guide says ports may use TCP, UDP, or TCP/UDP; game mapping sends traffic to the same port number on the VM. The public address is shared and the provider may change assigned ports. RAV can set one runtime FishNet port and registers that same port.
+- Current terms list Russia among IP-blocked countries; Ukraine is not listed. Do not bypass the block. Cloud is hobby beta on UK residential hardware, without an uptime promise; do not treat it as production/24x7 hosting.
+- **Next:** Inspect working-tree status, existing deployment scripts, Linux build freshness, and API/Unity configuration. Do not create a VM until staff grants access and confirms the free tier.
+
+
+#### AlienX local preparation checkpoint — 2026-11-25
+- **Current status:** BLOCKED pending staff approval of AlienX Cloud ticket #93. No VM or paid feature was created.
+- Official panel shows the free Lite allocation and Ubuntu 24.04 choice; official docs confirm UDP port mapping, but public and VM port numbers must match and the shared public endpoint is not guaranteed stable. Ukraine is not on the published blocked-IP list; Russia is listed. No restriction bypass was attempted.
+- Unity HEAD 3a050ee43598d5ff6aea16f17cd243e677043534 was rebuilt into a fresh Linux x86-64 Development server. Required Unity/Mono runtime files and scenes were verified; a separate release archive and manifest were generated and checked. Provider runbook is in the Unity repository at deploy/alienx/README.md.
+- No VM/Ubuntu/architecture/port/SSH, headless/runtime, external UDP, DTLS, API/PostgreSQL, registration/heartbeat/tickets, shutdown or performance test has been run. No active isolated staging API endpoint was available; production must not be used.
+- Resume only after ticket #93 is answered; verify that the VM remains zero-cost before creating it. Local deployment preparation is complete; runtime work remains blocked and no Stage 3B host deployment has started.
+
+
+## 2026-11-25 03:42 +08:00 — RAV Backend API and PostgreSQL deployment on Altare Always Free
+- **Status:** IN_PROGRESS.
+- **User request:** Audit the authenticated Altare account and current Always Free limits, then prepare and deploy the existing ASP.NET Core 10 RAV API and an isolated PostgreSQL staging database only if both can run securely and persistently for $0.
+- **Scope:** Verify account-specific resources, app/database availability, HTTPS, storage, persistence, quotas, restart/idle behavior, and pricing; inspect current API/Docker/database/migration/security configuration; prepare only minimal Altare files; deploy and run staging checks only after exact free allocation and safe isolation are confirmed.
+- **Acceptance:** Report account and free limits, database/API status and public staging URL only if actually deployed, migration/health/auth results only if tested, resource use, changed files, and remaining blockers. Do not claim untested flows.
+- **Safety:** Spend $0 and zero Bolts; no payment method, paid tier, automatic billing, production database/API/credentials, public PostgreSQL, weakened TLS/JWT/security, destructive DB operations, or automatic production migrations. Preserve existing dirty changes; no commit/reset/clean. Do not deploy the Unity server or modify gameplay.
+- **Initial context:** Prior Altare assessment found Always Free at 4 GiB RAM, 125% CPU, 40 GiB storage, 2 app slots, with 50 Bolts untouched; Docker Apps were previously documented as TCP-only. This task concerns HTTPS API and PostgreSQL, not the Unity UDP server. Recheck current account-specific availability.
+- **Start:** 2026-11-25 03:42 +08:00.
+- **Next:** Inspect latest repository status/commits, DEPLOYMENT_PROGRESS.md, DEPLOYMENT_CHECKLIST.md, system docs and deployment files; then audit the authenticated Altare account and current official documentation before creating any resource.
+
+
+### Altare Always Free deployment audit — 2026-11-25
+- **Status:** BLOCKED; no Altare app or database was created.
+- **Account evidence:** Default team is on Always Free. The console showed 0/2 app slots, 0/4 GiB memory, 0%/125% CPU and 0/40 GiB app storage. Managed PostgreSQL showed 0/1 databases, 0/256 MiB memory, 0 B/1 GiB storage and three-day backup retention. The included database tier is PostgreSQL 17 with 256 MiB, 50% CPU and 25 connections; Europe locations are Frankfurt, Karlskrona and London. No Warsaw location was offered in the observed form.
+- **Cost safeguards:** Billing showed $0 spent and no invoice; the last observed Bolt balance was 50. Auto top-up was Off and no card was saved. Saved the storage monthly spend cap at $0; the console confirmed “Spend cap saved.” This cap pauses over-plan storage writes and does not cover apps. No paid service, resource or Bolt was used.
+- **App platform:** The account supports two Docker App slots within its free pool. The UI accepted/checks Docker images for Linux/amd64. Apps only receive TCP ingress; Altare provides HTTPS termination and encrypted environment variables. The app data folder is retained when an image is redeployed. The official docs reviewed describe private networking for apps and databases run as apps, but do not establish that Managed PostgreSQL is reachable only over a private network or provide a managed-DB ingress allowlist. The managed database creation form showed no network restriction. Because the task forbids public PostgreSQL, no database was created. The Docker image creation draft for postgres:17-alpine was discarded; it did not create a resource.
+- **API validation:** dotnet build RavApi/rav-api.sln --configuration Release --no-restore passed with 0 warnings and 0 errors. The existing .NET 10 Dockerfile listens on HTTP 8080, runs as non-root, and disables startup migrations/seeding. Docker CLI 29.8.2 is installed, but the Docker Desktop Linux Engine pipe was absent, so no image was built or container started. Altare's data-folder persistence would require overriding the current Data Protection key path into that folder. The API trusts only configured ForwardedHeaders:KnownProxies; the reviewed Altare docs did not provide a stable proxy IP/CIDR, so trusting all proxy headers is not acceptable.
+- **Unverified:** No API/DB app, public URL, staging credentials, migration, health/auth/heartbeat test, DB backup/restore, restart/persistence check, CPU/RAM measurement or HTTP request-limit test exists. The official pages reviewed did not specify an app idle-shutdown/expiry policy or a request allowance. The active heavy-demand incident may affect deployments. One server heartbeat every two seconds is about 1,296,000 requests per 30 days; no capacity claim is made.
+- **Next gate:** Before deployment, obtain documented confirmation of private-only managed-DB access or an approved private app-to-app PostgreSQL design, identify Altare's trusted HTTPS proxy range, verify app overage hard-stop behavior at zero Bolts, and obtain direct approval before uploading the private API source/image to an external registry or linking a repository. Then provision only within the verified Always Free quotas and run isolated staging checks. Stage 3B runtime deployment remains NOT STARTED.
+
+## 2026-11-25 04:02:48 +08:00 — RAV full cloud deployment and multiplayer integration
+- **Status:** IN_PROGRESS.
+- **User request:** Deploy the existing .NET 10 RAV API and isolated staging PostgreSQL on Altare Always Free, integrate with the AlienX Cloud Lite RAV server, configure a separate Unity staging environment, and run an end-to-end multiplayer test if access and free quotas allow.
+- **Scope:** Reuse existing API source, Dockerfiles, deployment bundle, EF Core migrations, health/auth/server-ticket contracts, and existing provider notes. Keep production API/database and local client configuration unchanged.
+- **Safety:** Strict $0 and zero Bolts; no payment/card/paid tier, production credentials/data, public PostgreSQL, weakened TLS/JWT/DTLS, automatic production migration/seed, unnecessary code changes, or Git commit/reset/revert/clean. Preserve prior dirty TASK and deployment documentation.
+- **Acceptance:** Verify/deploy actual free resources, apply only reviewed migrations to a new staging database, test API health/auth/database/server registration/heartbeat/tickets and available client/game flow, document actual endpoints/resource use, update TASK and deployment docs, and never claim untested results.
+- **Initial state:** This repository already has uncommitted TASK/deployment-document changes from earlier provider tasks. Previous Altare account check found Always Free with 4 GiB RAM, 125% CPU, 40 GiB disk, 2 app slots, no app/DB, no card, auto top-up Off, 50 Bolts and a saved  storage overage cap. Prior audit lacked verified private managed-DB access and a stable trusted proxy range; this task allows TLS-protected public managed DB, so re-evaluate its specific safe configuration rather than duplicating the entire audit.
+- **Start:** 2026-11-25 04:02:48 +08:00.
+- **Next:** Inspect current API source, deployment bundle and task-state deltas; check current provider/access state before any resource creation. Build and run local components only against isolated staging data.
+### Provider and local image checkpoint — 2026-11-25 04:09:17 +08:00
+- AlienX ticket #93 remains pending staff; the panel still has 0 servers and no VM/IP/UDP mapping. Do not submit another ticket or wait before local work.
+- Altare still has 0 apps and 0 managed databases, Always Free quotas remain unused, Billing shows $0 and 50 Bolts, and no resource/payment state changed.
+- Started the existing Docker Desktop installation; its Linux engine is now reachable. Built the existing root Dockerfile as Linux/amd64 image rav-api:cloud-staging successfully using pinned official Microsoft .NET 10 images. The root .dockerignore excludes .env.local and production secret paths; no API source/image was pushed or uploaded.
+- Docker inventory revealed a pre-existing stopped container war-of-machines-local-postgres-1 and volume war-of-machines-local_war_of_machines_postgres_data. They were not started, inspected internally, or modified. Any new local test stack must use a unique project/network/volume and test-only secrets.
+- **Next:** Validate the existing staging Compose locally with isolated names/secrets and test API against a new local staging database only; keep the cloud and production databases untouched.
+### RAV full cloud deployment — local validation checkpoint (2026-11-25)
+
+- Validated and ran an isolated Compose stack; built API runtime and migrator, applied EF migrations, and seeded only the new local staging database. PostgreSQL TLS verify-full and API health passed.
+- Unity Development Linux server build and release archive succeeded; archive hash and path are in DEPLOYMENT_PROGRESS.md.
+- API smoke verified two staging players, profiles/starter vehicles, ticket issue/redemption/replay rejection, Unity registration/heartbeat, and a two-player backend match record. Unity headless runtime verified FishNet UDP 7770, Server scene, and unregister after graceful stop.
+- These tests do not prove actual client connectivity, DTLS handshake, Map scene runtime, gameplay/bots, public UDP, backup/restore, or 20-player performance.
+- No cloud app/database was created; AlienX ticket #93 is still pending. No money/Bolts, production service, production data, or credentials used. Local Docker containers were stopped without deleting their test volumes.
+
+## 2026-11-25 04:49 +08:00 — RAV Altare staging deployment and multiplayer continuation
+- **Status:** IN_PROGRESS.
+- **Direct user authorization:** Upload the private RAV API Docker image or necessary source to Altare and create free staging API/PostgreSQL resources. Strictly no paid resources, Bolts, payment details, production secrets, or production database changes.
+- **Scope:** Provision isolated free PostgreSQL and API on Altare, apply EF Core migrations, deploy/start/check via public HTTPS, test auth/profile/tickets/server registration, configure a separate Unity client staging environment, check AlienX access once, and if unavailable run the local dedicated server against the cloud API for a local client test.
+- **Preserve:** Existing dirty changes and local staging volumes; no commit/reset/revert/clean. Existing production and local Unity configuration must remain unchanged. Previous local test stack was stopped with named volumes retained.
+- **Acceptance:** Record actual endpoints/resources and only tests actually completed. If AlienX remains inaccessible, continue API and local-server integration. Do not spend money/Bolts or expose production data.
+- **Start:** 2026-11-25 04:49 +08:00.
+- **Next:** Inspect only current Altare/AlienX deployment gates and current repository state, then provision the free Altare staging stack if the account still exposes the confirmed free slots and the UI confirms zero cost.
+
+### Altare resource checkpoint — 2026-11-25 05:00 +08:00
+- Owner confirmed creation of only the scoped GitHub read integration for scorpioner2010/war-of-machines-API; sign-in is currently waiting in the visible browser. No GitHub permission has yet been granted.
+- Owner confirmed creating the exact free rav-staging PostgreSQL resource. The console now shows PostgreSQL 17, Europe region, 256 MB RAM, 50% CPU, 25 connections, 1 GB disk, status Setting up. This matches the Always Free limits and current usage showed 0/1 database and no other database consumption before creation.
+- Database address/password have not yet been exposed or connected to an app. Do not print credentials. Next: wait for DB Ready, verify its size, then provision app using only the explicitly approved repo and free resources; recheck app resource/billing before final create.
+
+### Altare GitHub scope and image delivery checkpoint — 2026-11-25
+- GitHub's Altare installation page offers only `scorpioner2010/war-of-machines-API` when selecting a single repository, but the app requests **read access to code/metadata plus read/write access to commit statuses and pull requests**. The user delegated choosing the best option after previously approving read-only only; least-privilege choice is not to install this broader integration. No GitHub grant was submitted.
+- Official Altare docs say App Hosting supports Node/Bun/Python/Go/Rust (not .NET) and deploys the latest GitHub commit, while Docker Apps pull `linux/amd64` images from an external registry (they do not accept a local image upload). Local `altr` CLI is not installed and there is no Altare-specific MCP tool in this session.
+- Verified local `rav-api:cloud-staging` image metadata only (no secret values printed): linux/amd64, 379.6 MB, non-root UID 1654, TCP 8080; image ID `sha256:97c0eeeccaed44a2e0648387c1cf20907cd1323567995fafc17274957cf199aa`. Current dirty files preserved; no push, registry credential, Altare app, DB connection, deployment, or payment action occurred.
+- **Blocker/next:** Need an authorized path to place this private image in a registry Altare can pull from (for example a private GHCR package) or a supported direct upload/build mechanism. A GHCR push would transmit the private API image to GitHub Container Registry, which was not explicitly authorized as a destination; ask before doing so. Keep `rav-staging` isolated and do not install the broader GitHub app unless the user explicitly changes scope.
+
+### Altare database readiness — 2026-11-25
+- Rechecked the existing `rav-staging` resource in the console: **Running**, PostgreSQL 17, Europe, 256 MB, 50% CPU, 1 GB disk, 25-connection cap, 7.34 MB data at observation. TLS is required. Connection details were visible in the console but were not copied to files or chat.
+- The Apps page still shows no apps and no app-resource usage. Altare currently displays a heavy-demand incident affecting deployments and the console. No API app has been created or connected to the database.
+- Owner asked Codex to choose the safer GitHub permission option; no additional GitHub installation scopes were granted. A separate action-time decision is pending for the private API image transfer to GHCR, an additional destination required by Altare's documented Docker pull flow.
+
+### GHCR image-content audit — 2026-11-25
+- Existing `rav-api:cloud-staging` is Linux/amd64, 379.6 MB, non-root UID 1654, exposes TCP 8080, and uses `dotnet RavApi.dll`. Root `.dockerignore` excludes `.env.local`, `.env.production`, production secret paths and build artifacts. App settings have an empty JWT signing key and empty database connection string; no credential values were present in the inspected source config. Runtime filesystem scan found no `.env*`, certificate/key files or raw `.cs`/project/solution sources, and no PEM private-key/certificate markers.
+- Audit found `/app/RavApi.pdb` (81,612 bytes) and `/app/appsettings.Development.json`. The development settings explicitly enable migrations and seed-on-startup, so this config is unnecessary and potentially unsafe in the runtime image. The planned `staging-20261125` artifact will therefore be rebuilt from the same API source with portable debug symbols disabled and Development settings excluded before final-stage copy; preserve the original local image tag and verify the new image before upload.
+- No token has been supplied yet. No image push, package visibility change, Altare app creation, or DB connection has occurred. Next: make the minimal Docker packaging adjustment, rebuild the new audited local tag, then rescan its final filesystem.
+
+### Staging startup/security review — 2026-11-25
+- The API requires `Jwt:Key`, issuer and audience; in Production it also fails closed unless Data Protection has a PFX/private key and password. Its current Docker image persists Data Protection keys under a non-volume path by default, so the Altare app must mount `/data` and override the key directory there; the PFX must be injected at runtime from encrypted staging-only variables and never baked into the image.
+- `appsettings.Production.json` still contains the legacy Render AllowedHosts value; the Altare app must override `AllowedHosts` to its exact HTTPS hostname. Forwarded proxy trust remains empty until Altare publishes trusted source IPs; do not trust arbitrary proxies.
+- The existing `SeedData.Initialize` seeds a public default player `testuser/test123` and a demo match when the database is empty. Staging needs catalog/maps for vehicle and match testing, but must not expose that predictable account. Add an explicit `Database:SeedDevelopmentFixtures` opt-in (enabled only in local Development, false in staging/Production), while keeping normal catalog seed available.
+- Altare's PG URL currently uses TLS `require`; its console says certificate verification uses the downloaded database certificate with `sslmode=verify-full`. The API URL converter currently ignores `sslrootcert`; add documented config overrides `Database:SslMode` and `Database:RootCertificate` so staging can use VerifyFull against the Altare CA without changing the database URL/password or disabling validation.
+- **Next:** Implement these narrow configuration/seed guards and a runtime PFX entrypoint; update the system docs, rebuild and repeat the image audit before asking for PUSH_TOKEN.
+
+## 2026-11-25 05:39 +08:00 — RAV GHCR and Altare API deployment continuation
+- **Status:** IN_PROGRESS.
+- **User request:** Do not install Altare's GitHub App or grant repository/commit/PR access. Use only private GHCR, inspect the existing API image for secrets/source leakage, push `ghcr.io/scorpioner2010/rav-api:staging-20261125` using PUSH_TOKEN via stdin, record the resulting digest, configure an Altare Docker App in Frankfurt on a free tier using port 8080 and only PULL_TOKEN, connect existing `rav-staging`, apply EF migrations only to that staging database, verify public HTTPS health/auth/tickets/server registration, then connect the local Unity Dedicated Server and prepare a separate Unity Client staging test.
+- **Credentials:** Owner plans to provide classic PATs with `write:packages` and `read:packages`; no token should be requested in chat, echoed, logged, or saved to repo/docs/scripts. Ask for direct entry through a secure terminal or Altare private-registry field only when needed.
+- **Safety:** Keep GHCR package private; do not install GitHub App; no production secrets/DB/API, no public package, payments, Bolts, paid resources, destructive DB changes, or weakened TLS/DTLS; preserve all prior dirty work and never commit/reset/clean.
+- **Acceptance:** Verify image contents without exposing secret values; push and confirm private package/tag/digest; create and connect only the free Frankfurt Docker App and existing staging database; run reviewed EF migrations only on `rav-staging`; report only actually observed endpoint/tests; leave Unity local/production settings intact and document exact test launch steps.
+- **Initial state:** Existing `rav-staging` is Running (PostgreSQL 17, Europe, 256 MB RAM, 50% CPU, 1 GB disk, 25 connections, ~7.34 MB observed data). No API app exists. Local image `rav-api:cloud-staging` was previously observed as linux/amd64, ~379.6 MB, non-root UID 1654 and TCP 8080. GitHub OAuth permission screen was canceled; no GitHub App scopes were granted. Altare reports a heavy-demand incident.
+- **Start/next:** 2026-11-25 05:39 +08:00. Read API/Unity project instructions and this journal before further inspection; verify the image filesystem/config and prepare non-echoing token input. Continue only after the user enters PUSH_TOKEN directly in a secure prompt; do not fabricate credentials.
+
+## 2026-11-25 — GHCR/Altare staging continuation checkpoint
+
+- User explicitly rejected Altare GitHub App/source access and authorized private GHCR image deployment, a free Frankfurt Docker App on TCP 8080, use of existing `rav-staging`, and API staging validation.
+- Altare Console observed: `rav-staging` PostgreSQL is Running; current Apps pool is unused (0/4 GiB RAM, 0/125% CPU, 0/40 GiB disk, 0/2 slots), wallet 50 Bolts. No new resource or Bolt use in this checkpoint.
+- API Release build: passed, 0 warnings/errors. Local `rav-api:staging-20261125` image: Linux/amd64, 397,904,758 bytes, UID 1654, port 8080. Runtime file audit passed (no .env, private cert/key, source, PDB, PEM marker or Development settings); shell syntax and fail-closed PFX requirement passed.
+- Added `Database:SslMode` and `Database:RootCertificate` support for Altare TLS verification; Development fixture player/demo match now require `Database:SeedDevelopmentFixtures=true`, false in base/Production. `/data/protection` is set up for the persistent Altare data folder; runtime entrypoint accepts PFX/CA material only through environment values and writes restricted temporary files.
+- Waiting for owner to enter GHCR PUSH_TOKEN in the masked PowerShell window. Remote push/digest and image visibility are NOT VERIFIED. Do not put tokens in TASK or docs.
+- No Docker App was created yet; PULL_TOKEN has not been entered; DB was not connected to an app; cloud migrations/health/auth/server registration and Unity staging tests remain NOT TESTED. No production use; no GitHub App.
+
+## 2026-11-25 — Altare variable analysis checkpoint
+- User confirmed Altare has successfully verified the private GHCR image. Recorded its digest in deployment progress/checklist; no rebuild was necessary.
+- Analyzed the live API settings, root Dockerfile, runtime entrypoint and staging Compose. Documented exact Altare variable names, defaults, secret sources, database TLS verification, Data Protection behavior, persistent data folder and start command. No secret values were copied into this journal.
+- Verified the generated staging bundle is current-user DPAPI-encrypted, has an explicit user-only ACL, contains the required JWT/Data Protection and optional server-registration material, and contains no registry PATs. Its encrypted file remains outside both repositories.
+- Migration gate: `20260512084921_AddVehicleProjectileStats` drops the existing `Vehicles.Damage` column. Keep migrations disabled until `rav-staging` backup/schema/data have been reviewed.
+- Altare app creation, DB attachment to the API, migrations and all cloud API/Unity tests are still pending. No rebuild, cloud resource creation, payment, Bolt usage, production access, or production data change occurred.
+- A user-local helper `Copy-AltareStagingValue.ps1` was added beside the DPAPI bundle (outside Git). It copies one selected variable to the clipboard without printing it, then clears the clipboard after the owner presses Enter. It can also base64-encode the public PostgreSQL CA certificate from a chosen local file.
+
+## 2026-11-25 — Final cloud deployment and credential management
+- **Status:** IN_PROGRESS.
+- **User request:** Complete staging deployment of the existing private RAV API image to Altare, connect existing `rav-staging`, back up/review/apply safe migrations and seed, verify HTTPS/API contracts; deploy the Unity Dedicated Server to an actually available free persistent UDP host (AlienX first), configure a separate Unity client staging profile without launching the user's client, and organize credential recovery/documentation under the requested Desktop folder.
+- **Additional authorization:** Use current authorized GHCR/Altare credentials and sessions; generate staging secrets locally; store them in a Windows DPAPI-protected user-only vault; use free resources only, no Bolts/payment/production data. Do not install GitHub App or broaden scopes, expose secrets, disable TLS/DTLS, delete data, or claim untested results.
+- **Acceptance:** Actual cloud API and DB connection, migration/backup state, host/UDP/DTLS/server registration state, Unity client settings, documentation/scripts/vault inventory and exact remaining blockers are recorded truthfully. Do not launch Unity Client.
+- **Start:** 2026-11-25 (Asia/Manila).
+- **Initial handoff:** Private image was Altare-verified with a recorded GHCR digest; the `rav-staging` database was last observed Running; Docker App creation, cloud DB attachment/migrations and Unity cloud tests were pending. AlienX ticket #93 was last recorded awaiting approval. Local staged secret bundle is DPAPI-protected outside the repositories. Preserve all existing dirty work.
+- **Next:** Inspect current Git status and existing project instructions/journals (done before this entry), then inspect live authorized provider state and only resume incomplete work.
+
+### 2026-11-25 — Final deployment and vault checkpoint
+- Observed the current Altare state: database Running but no app; image wizard verified GHCR image and has PULL login, TCP 8080, /data, blank start command. No external resource was created in this checkpoint.
+- A database password was accidentally included in a browser-derived tool output after line-based filtering missed the value-only line. The value is not recorded or repeated. Requested owner password reset through Altare; do not use the previous credential.
+- Captured existing Git Credential Manager and GHCR token credentials into the user-only DPAPI Desktop vault; round-trip verified. Plaintext token source remains because automatic deletion was rejected; do not retry through another mechanism.
+- Created the Desktop deployment docs, nine PowerShell helpers and copied Unity archive; SHA-256 matches and all scripts passed PowerShell parser syntax validation.
+- Docker Engine/image are available locally; no rebuild. No cloud app, database connection, migration, public endpoint or runtime tests yet.
+- Next: Resume Altare only after owner confirms password rotation; then backup/review migration before app DB attach and controlled staging deployment. Continue AlienX status only after browser control returns.
+### User continuation — defer staging DB password rotation — 2026-11-25
+- The owner asked to defer changing the rav-staging password until the staging services are configured, launched, and tested; treat this database as test-only and continue the previously authorized staging tasks.
+- Do not reset or rotate the password now. Do not print or place any password in chat, Git, or plaintext documentation. Prefer Altare''s supported app-to-database connection flow so credentials are injected directly; if direct DB access is required and no safe authorized route exists, record that blocker without exposing the credential.
+- Continue from the recorded private GHCR image and existing PostgreSQL instance. Recheck live resource state before creating the free API app; keep migration/seed startup flags disabled except for a controlled one-time staging migration after a verified backup and data-impact review.
+- Next: Confirm current Altare resource state and app creation settings, then deploy only if it remains within the authorized free allocation and zero-Bolt limit.
+
+## 2026-11-25 — Continued Altare staging after owner deferred password rotation
+- Owner instruction: defer rav-staging credential rotation until after test deployment and integration checks. The DB is test-only. Do not reset now; use Altare's supported Connect to an app injection path where possible. Do not echo or document any credential.
+- Current Altare Postgres list was readable: rav-staging is Running, PostgreSQL 17, Europe, 256 MB RAM, 1 GB disk, about 7.34 MB; the Console showed 50 Bolts. No app or Bolt was created/used during this continuation.
+- Clicked Back up now once. Altare returned “Backup started.” A Nightly 1.05 KB Done row was visible, but the new manual backup was not observed in a completed state. Backup readiness remains NOT VERIFIED; no migration/seed ran.
+- Altare Settings, Tables and Apps/New routes stayed on loading skeletons while the page displayed the existing high-demand incident notice. No API app, endpoint, database attachment, or cloud test was created.
+- Reviewed AddVehicleProjectileStats source: it drops Vehicles.Damage and adds DamageMin/DamageMax/ShellSpeed/ShellsCount. Before applying, inspect current tables, applied migration history and data; preserve user data.
+- Official free x86 candidate research: Oracle Always Free AMD micro is 1/8 OCPU, 1 GB RAM, 50 Mbps and includes one public IP; Ubuntu supported. OCI may reclaim idle resources and signup requires valid card details for verification, with a temporary authorization hold possible. No account, card or resource was created. Candidate is not validated for RAV runtime or 20-player use.
+- **Next:** Once Altare Console data routes are available, verify the requested backup, schema, migration history and zero-cost App options; create and attach only the authorized free App, then continue HTTPS/API tests. Check AlienX approval and actual UDP hosting separately. Keep Unity Cloud config unchanged until real API and UDP endpoints exist.
+
+### 2026-11-25 — Altare API image and app request
+- Altare verified the private staging image, matching recorded digest and TCP 8080. PULL token was pasted by the owner into the private registry field; protected clipboard helper then cleared the OS clipboard.
+- Region selection: Stockholm (available standard Europe region); Frankfurt/Karlskrona/Helsinki had no capacity. London Plus was not selected. Free-pool allocation is 1 GiB RAM / 50% CPU / 2 GiB disk, preserving the remainder.
+- The rav-api-staging creation request was submitted once; Altare UI remained at Creating… during the heavy-demand incident. Do not resubmit or report success until the Console confirms an app id/endpoint.
+- No environment variables, database attachment, migration, seed, API test, Unity Client config, or production setting changed. Owner deferred DB password rotation; respect that.
+
+### 2026-11-25 — Altare free placement failure
+- Automatic placement returned no matching allocation. Pinned tries on se-sto01 and se-sto02 both failed with “The node has no free ports.” No app was created; do not keep retrying or select Plus resources.
+- The unsaved PULL token was cleared from the wizard after failure. It remains in the existing DPAPI vault only; never print it.
+- Postgres backup status could not be confirmed (Backups route remained Loading). No DB attachment, migration, seed, API test, or production change occurred. Owner continues to defer test DB password rotation.
+
+### 2026-11-25 — Oracle A1 ARM64 preflight (staging API connectivity scope)
+- **Status:** COMPLETED — API CONNECTIVITY NOT TESTED.
+- **User request:** Check whether the current staging API is available for Unity Linux ARM64 registration/heartbeat tests; do not use production as fallback.
+- **Scope:** Read-only review of API configuration/docs and staging endpoint availability. No code, database, migration, secret, or service changes are authorized by this check.
+- **Acceptance:** Record whether a genuine isolated staging HTTPS endpoint exists and whether registration/heartbeat tests were actually performed.
+- **Safety:** Do not expose credentials or read secrets into output. Preserve dirty state; do not contact production.
+- **Start:** 2026-11-25 (Asia/Manila).
+- **Result:** The recorded Altare free-app allocation attempts failed because the selected nodes had no free ports, and no isolated staging HTTPS API hostname is available. Therefore ARM64 server registration and heartbeat could not be tested. No API, database, migrations, credentials, or production settings were changed; production fallback was not contacted.
+
+### 2026-11-25 — Oracle A1 deployment API integration check
+- **Status:** IN_PROGRESS.
+- **Scope:** Check whether an isolated staging HTTPS API endpoint now exists; if so, use only that endpoint for server registration/heartbeat/ticket tests. Never use production fallback. Do not alter API/database unless explicitly required and isolated.
+- **Acceptance:** Record live endpoint availability and actual integration tests; no secrets in output or documentation.
+- **Start:** 2026-11-25 (Asia/Manila).
+- **Initial handoff:** Previous task journal says Altare could not allocate free app ports; no API hostname existed. Recheck only if integration is relevant to the deployment and do not redo local preflight tests.
+
+## RAV Netcup infrastructure deployment — IN_PROGRESS
+
+- Started: 2026-11-25 18:30:05 +08:00 (Asia/Manila).
+- Request: Resume previous Netcup preparation and deploy staging infrastructure for RAV: PostgreSQL 17, ASP.NET Core 10 API over HTTPS, Unity Linux x86-64 Dedicated Server on UDP 7770 with DTLS, and configure Unity Client. Search/reuse existing artifacts; do not repeat successful audits/tests.
+- Acceptance: actual resources and integration only after provider/account state, exact billed amount, contract term, renewal/cancellation and IPv4 price are verified. Stop before paid order and obtain user's confirmation. No production API/database; no payment or legally binding order without explicit final authorization; no paid add-ons; preserve current work and do not expose secrets.
+- Current status: IN_PROGRESS. No repository/source inspection or deployment action performed in this task yet. No cloud resource, order, payment, migration, or client endpoint change made.
+- Next: read both project AGENTS.md and task journals; inspect existing Netcup docs/artifacts/status and browser/account session; continue only safe local preparation until purchase gate.
+### Netcup discovery checkpoint — 2026-11-25
+- Read project instructions and current journals before source edits. Both repositories already contain user changes; Unity working tree includes HttpLink/diagnostics and deployment docs/scripts, API working tree includes staging/Docker/config/migration-related changes. No commit/reset/clean performed.
+- Desktop deployment folder contains current generic/Altare/AlienX deployment notes, a packaged x86-64 Unity server archive, scripts, and DPAPI vault. No dedicated Netcup deployment plan/config was found in tracked deploy files or current deployment docs.
+- Do not read or expose secret values. A separate `secure-vault/alienx-rav-staging-ed25519` private-key file exists beside `credentials.dpapi.txt`; it is scoped by name to AlienX and will not be reused for Netcup without an explicit technical need. Inspect its ACL before any further key handling.
+- Existing state recorded in documents is stale for the newly selected provider: Altare API app was unavailable; no current Netcup VPS/IP/SSH endpoint is confirmed yet.
+- Next: verify official Netcup plan/order requirements and inspect the existing in-app browser/account session; preserve the current order until price/term/renewal/IPv4/cancellation are verified. Stop before final purchase and request explicit confirmation.

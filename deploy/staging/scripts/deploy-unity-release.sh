@@ -30,6 +30,11 @@ tar --extract --gzip --file "$archive" --directory "$stage_dir" --no-same-owner 
 if [[ ! -f "$stage_dir/RAVServer.x86_64" || ! -f "$stage_dir/RAVServer_Data/globalgamemanagers" || ! -f "$stage_dir/RAVServer_Data/Managed/Assembly-CSharp.dll" || ! -f "$stage_dir/RAVServer_Data/MonoBleedingEdge/x86_64/libmonobdwgc-2.0.so" || ! -f "$stage_dir/UnityPlayer.so" ]]; then
   echo "Release archive is missing required Linux Unity files." >&2; exit 1
 fi
+if [[ -e "$stage_dir/Logs" || -L "$stage_dir/Logs" ]]; then
+  echo "Release already contains Logs; refusing to replace its contents." >&2; exit 1
+fi
+install -d -o rav-staging-server -g rav-staging-server -m 0750 /var/log/rav-staging/unity
+ln -s /var/log/rav-staging/unity "$stage_dir/Logs"
 chmod 0750 "$stage_dir/RAVServer.x86_64"
 chown -R root:rav-staging-server "$stage_dir"
 find "$stage_dir" -type d -exec chmod 0750 {} +

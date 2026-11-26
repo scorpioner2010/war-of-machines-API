@@ -156,7 +156,7 @@ try {
         "API source/project files: $($apiSourceFiles.Count) (SHA-256 matched)",
         "Unity source: $([IO.Path]::GetFileName($unityBuild))",
         'Secrets: none; generate on the isolated VPS during bootstrap.',
-        'Runtime deployment: NOT STARTED'
+        'Runtime deployment status: tracked in the deployment progress document.'
     ) -join "`n"
     [IO.File]::WriteAllText((Join-Path $packageRoot 'BUNDLE-INFO.txt'), $info + "`n", [Text.UTF8Encoding]::new($false))
 
@@ -165,7 +165,8 @@ try {
         $text = [IO.File]::ReadAllText($_.FullName)
         $text = $text -replace "`r`n?", "`n"
         [IO.File]::WriteAllText($_.FullName, $text, [Text.UTF8Encoding]::new($false))
-        if (-not $text.StartsWith('#!/usr/bin/env bash')) { throw "Missing Bash shebang: $($_.FullName)" }
+        $shebang = ($text -split "`n", 2)[0]
+        if ($shebang -notin @('#!/usr/bin/env bash', '#!/bin/sh')) { throw "Unsupported shell shebang: $($_.FullName)" }
         if ($text -match "`r" -or $text -match '(?m)[ \t]+$') { throw "Shell script contains CR or trailing whitespace: $($_.FullName)" }
     }
 

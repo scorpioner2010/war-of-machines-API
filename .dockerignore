@@ -5,6 +5,12 @@
 **/obj/
 **/.env.local
 **/.env.production
+**/.env
+**/.env.*
+**/*.pfx
+**/*.p12
+**/*.key
+**/*.pem
 deploy/production/secrets/**
 deploy/production/.env.production
 **/*.user

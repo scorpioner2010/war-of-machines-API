@@ -7,11 +7,11 @@ WORKDIR /src
 COPY RavApi/RavApi.csproj RavApi/
 RUN dotnet restore RavApi/RavApi.csproj
 COPY . .
-RUN dotnet publish RavApi/RavApi.csproj -c Release --no-restore -o /app/out /p:UseAppHost=false
+RUN dotnet publish RavApi/RavApi.csproj -c Release --no-restore -o /app/out /p:UseAppHost=false /p:DebugType=None /p:DebugSymbols=false && rm -f /app/out/appsettings.Development.json
 
 COPY deploy/production/healthcheck/HealthProbe.csproj /src/healthcheck/
 COPY deploy/production/healthcheck/Program.cs /src/healthcheck/
-RUN dotnet publish /src/healthcheck/HealthProbe.csproj -c Release -o /health-probe /p:UseAppHost=false
+RUN dotnet publish /src/healthcheck/HealthProbe.csproj -c Release -o /health-probe /p:UseAppHost=false /p:DebugType=None /p:DebugSymbols=false
 
 FROM mcr.microsoft.com/dotnet/sdk:10.0.302 AS migrate
 WORKDIR /src
@@ -29,15 +29,18 @@ WORKDIR /app
 
 COPY --from=build /app/out ./
 COPY --from=build /health-probe /health-probe
-RUN mkdir -p /var/lib/war-of-machines/data-protection /run/credentials && chown -R $APP_UID:$APP_UID /var/lib/war-of-machines
+COPY deploy/staging/api/entrypoint.sh /app/entrypoint.sh
+RUN chmod 0555 /app/entrypoint.sh && mkdir -p /data/protection && chown -R $APP_UID:$APP_UID /data
 
 ENV ASPNETCORE_HTTP_PORTS=8080 \
     ASPNETCORE_URLS=http://+:8080 \
+    ASPNETCORE_ENVIRONMENT=Production \
     Database__ApplyMigrationsOnStartup=false \
     Database__RunSeedOnStartup=false \
+    Database__SeedDevelopmentFixtures=false \
     Swagger__Enabled=false \
-    DataProtection__KeyDirectory=/var/lib/war-of-machines/data-protection
+    DataProtection__KeyDirectory=/data/protection
 EXPOSE 8080
 USER $APP_UID
 
-ENTRYPOINT ["dotnet", "RavApi.dll"]
+ENTRYPOINT ["/app/entrypoint.sh"]

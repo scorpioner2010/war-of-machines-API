@@ -306,3 +306,22 @@ Local package preparation is complete. Stage 3A remains pending; run only the sy
 - **Local validation limit:** Bash syntax parsing was not available in this Windows session. The earlier Git Bash `E_ACCESSDENIED` was not retried. The bundle's first-deploy runbook requires `bash -n` on all bundled shell scripts after extraction and before host changes.
 - **Deferred:** The last owner-provided VPS state was still OVH review pending with no active endpoint/IP or SSH access; OVH was not rechecked. Host bootstrap, Docker startup, PostgreSQL TLS/backup-restore execution, Caddy certificates, API health, Unity headless runtime, UDP 7770, FishNet, DTLS, registration/heartbeat, tickets, match/gameplay/load and deployment/rollback execution remain **NOT TESTED** until an isolated VPS is active.
 - **Status:** Deployment bundle **READY**. Local static validation **PARTIAL**. **READY FOR VPS DEPLOYMENT: NO** until an active VPS endpoint/SSH path is available and the bundled `bash -n` preflight passes; this reflects the last owner-provided VPS state (OVH was not rechecked). Stage 3B runtime **NOT STARTED**. Do not mutate a host until access is verified, the preflight passes, and Stage 3B is explicitly authorized.
+## Netcup live deployment — current runbook (2026-11-26; supersedes historical Altare blocker)
+
+The Netcup staging environment is deployed; do not follow the historical Altare setup steps above for this environment.
+
+- VPS: 62.83.120.40, Ubuntu 24.04.5 x86-64, 4 vCPU, 8 GiB RAM, 160 GiB disk, Nuremberg.
+- API: `https://api.staging.62-83-120-40.sslip.io`; game UDP: `62.83.120.40:7770`.
+- Services: `rav-staging-compose.service`, `rav-staging-dedicated-server.service`, `rav-staging-monitor.timer`.
+- DB: new `rav_staging` PostgreSQL 17, current EF migrations applied, system catalog only. No legacy data or development fixtures. PostgreSQL/API ports remain private.
+- Release scripts: `/opt/rav-staging/scripts/deploy-staging.sh`, `deploy-unity-release.sh`, `health-check-unity.sh`, `backup-staging-postgres.sh`, `smoke-test.sh`. Local source is `deploy/staging`.
+- Latest full bundle: `deploy/staging/artifacts/RAV-Staging-3B-20261125T194757Z.tar.gz`, SHA-256 `d2b30525f7e940bf9aa887e1d3177613ffcef7e9a5e62b3fd520ce469ae595ee`.
+- Start Unity Editor with the Desktop launcher `scripts\Launch-RAV-Staging-Unity.cmd`. It sets only staging API URL and public DTLS CA trust; do not pass the Dedicated Server credential/private key to a client.
+
+Before any rollback or schema change, retain the staging backup and use the documented staging-only scripts. Do not point them at production.
+
+Outstanding runtime checks are FishNet DTLS handshake, live client ticket and Map/match/gameplay, and 20-slot load. Stability and reboot recovery passed; datagram arrival alone is not proof of DTLS.
+
+## Execution result — Netcup staging — 2026-11-26
+
+Infrastructure deployment, empty staging DB/migrations/system seed, API/HTTPS, Unity Dedicated Server service, 30-minute stability observation, backup/restore, and controlled reboot recovery are complete. A real Unity client is still required to validate DTLS and gameplay. Use the Desktop staging launcher; do not point the client to production.

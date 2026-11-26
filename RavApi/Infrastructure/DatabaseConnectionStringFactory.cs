@@ -1,4 +1,5 @@
 using Npgsql;
+using System.IO;
 
 namespace RavApi.Infrastructure
 {
@@ -9,11 +10,13 @@ namespace RavApi.Infrastructure
             var databaseUrl = configuration["DATABASE_URL"];
             if (!string.IsNullOrWhiteSpace(databaseUrl))
             {
-                return ConvertToConnectionString(databaseUrl);
+                return ConvertToConnectionString(databaseUrl, configuration);
             }
 
             var configuredConnectionString = configuration.GetConnectionString("DefaultConnection");
-            return string.IsNullOrWhiteSpace(configuredConnectionString) ? null : configuredConnectionString;
+            return string.IsNullOrWhiteSpace(configuredConnectionString)
+                ? null
+                : ConvertToConnectionString(configuredConnectionString, configuration);
         }
 
         public static string Resolve(IConfiguration configuration)
@@ -27,11 +30,14 @@ namespace RavApi.Infrastructure
             throw new InvalidOperationException("Database connection string is not configured. Set DATABASE_URL or ConnectionStrings__DefaultConnection.");
         }
 
-        private static string ConvertToConnectionString(string rawValue)
+        private static string ConvertToConnectionString(string rawValue, IConfiguration configuration)
         {
             if (LooksLikeKeywordValueConnectionString(rawValue))
             {
-                return rawValue;
+                var keywordBuilder = new NpgsqlConnectionStringBuilder(rawValue);
+                ApplyTlsOverrides(keywordBuilder, configuration);
+                ApplySshTunnelOverrides(keywordBuilder, configuration);
+                return keywordBuilder.ConnectionString;
             }
 
             var normalizedValue = NormalizeDatabaseUrl(rawValue);
@@ -75,10 +81,12 @@ namespace RavApi.Infrastructure
                 {
                     if (pair.Key.Equals("sslmode", StringComparison.OrdinalIgnoreCase))
                     {
-                        if (Enum.TryParse<SslMode>(pair.Value.ToString(), true, out var sslMode))
-                        {
-                            builder.SslMode = sslMode;
-                        }
+                        builder.SslMode = ParseSslMode(pair.Value.ToString());
+                    }
+                    else if (pair.Key.Equals("sslrootcert", StringComparison.OrdinalIgnoreCase) ||
+                             pair.Key.Equals("rootcertificate", StringComparison.OrdinalIgnoreCase))
+                    {
+                        builder.RootCertificate = pair.Value.ToString();
                     }
                     else if (pair.Key.Equals("trustservercertificate", StringComparison.OrdinalIgnoreCase) ||
                              pair.Key.Equals("trust_server_certificate", StringComparison.OrdinalIgnoreCase))
@@ -92,7 +100,74 @@ namespace RavApi.Infrastructure
                 }
             }
 
+            ApplyTlsOverrides(builder, configuration);
+            ApplySshTunnelOverrides(builder, configuration);
             return builder.ConnectionString;
+        }
+
+        private static void ApplySshTunnelOverrides(NpgsqlConnectionStringBuilder builder, IConfiguration configuration)
+        {
+            var tunnelPortValue = configuration["RAV_DATABASE_TUNNEL_LOCAL_PORT"];
+            if (string.IsNullOrWhiteSpace(tunnelPortValue))
+            {
+                return;
+            }
+
+            if (!string.Equals(builder.Host, "postgres", StringComparison.OrdinalIgnoreCase))
+            {
+                throw new InvalidOperationException("The Local API SSH tunnel accepts only the rav_staging PostgreSQL service host.");
+            }
+
+            if (!int.TryParse(tunnelPortValue, out var tunnelPort) || tunnelPort < 1024 || tunnelPort > 65535)
+            {
+                throw new InvalidOperationException("The Local API SSH tunnel port is invalid.");
+            }
+
+            var rootCertificate = configuration["RAV_DATABASE_ROOT_CERTIFICATE"];
+            if (string.IsNullOrWhiteSpace(rootCertificate) || !File.Exists(rootCertificate))
+            {
+                throw new InvalidOperationException("The verified PostgreSQL staging CA certificate is missing.");
+            }
+
+            if (!string.Equals(configuration["RAV_DATABASE_TLS_SERVER_NAME"], "postgres", StringComparison.Ordinal))
+            {
+                throw new InvalidOperationException("The Local API SSH tunnel has an invalid PostgreSQL TLS server name.");
+            }
+
+            builder.Host = "127.0.0.1";
+            builder.Port = tunnelPort;
+            builder.SslMode = SslMode.VerifyFull;
+            builder.RootCertificate = Path.GetFullPath(rootCertificate);
+        }
+
+        private static void ApplyTlsOverrides(NpgsqlConnectionStringBuilder builder, IConfiguration configuration)
+        {
+            var sslMode = configuration["Database:SslMode"];
+            if (!string.IsNullOrWhiteSpace(sslMode))
+            {
+                builder.SslMode = ParseSslMode(sslMode);
+            }
+
+            var rootCertificate = configuration["Database:RootCertificate"];
+            if (!string.IsNullOrWhiteSpace(rootCertificate))
+            {
+                builder.RootCertificate = rootCertificate;
+            }
+        }
+
+        private static SslMode ParseSslMode(string value)
+        {
+            var normalizedValue = value
+                .Trim()
+                .Replace("-", string.Empty, StringComparison.Ordinal)
+                .Replace("_", string.Empty, StringComparison.Ordinal);
+
+            if (Enum.TryParse<SslMode>(normalizedValue, true, out var sslMode))
+            {
+                return sslMode;
+            }
+
+            throw new InvalidOperationException("PostgreSQL SSL mode is invalid. Use disable, allow, prefer, require, verify-ca, or verify-full.");
         }
 
         private static bool LooksLikeKeywordValueConnectionString(string value)

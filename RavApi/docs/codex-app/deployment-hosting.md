@@ -27,6 +27,12 @@ Production API має бути доступний клієнтам лише че
 ## Обмеження
 Production deployment, ротація реальних ключів і production DB migration цим task не виконувалися. `/admin` і Swagger потребують окремого network access control, навіть якщо вони role-protected.
 
+## Staging container packaging
+- GHCR/Altare staging images must be built from the final `runtime` stage only; never publish the `migrate` stage because it contains API source and EF tooling.
+- Runtime publish disables debug symbols and removes `appsettings.Development.json`. The image sets `ASPNETCORE_ENVIRONMENT=Production`, disables migrations/catalog seed/development fixtures by default, and uses `/data/protection` for a persistent Altare Data folder mounted at `/data`. For the first deployment to an empty, explicitly verified staging database only, set `Database:ApplyMigrationsOnStartup=true` and `Database:RunSeedOnStartup=true`; keep `Database:SeedDevelopmentFixtures=false`. After successful migration/catalog seed, turn the two startup switches off and redeploy. Never point these switches at production.
+- The staging entrypoint requires an encrypted runtime Data Protection PFX and password in Production, decodes the PFX into a mode-0600 temporary file, and fails closed when either value is missing. A provider PostgreSQL CA may be supplied as a base64 environment value and is written to a restricted temporary file; configure `Database:SslMode=VerifyFull` and `Database:RootCertificate` to validate the DB certificate and hostname.
+- `.dockerignore` excludes `.env` files, PFX/P12/private-key/PEM files, production secret directories, VCS metadata, and build artifacts. Before publishing, inspect the final runtime filesystem for environment files, certificates/private keys, debug/source files, and embedded runtime configuration secrets.
+
 ## Оновлення аудиту 2026-11-22
 
 Повний Stage 1 readiness audit і послідовність наступних етапів описані в [deployment plan](../deployment/DEPLOYMENT_PLAN.md), [progress](../deployment/DEPLOYMENT_PROGRESS.md) і [checklist](../deployment/DEPLOYMENT_CHECKLIST.md). Перевірка підтвердила: API та Dockerfile поки на .NET 8, підтримка якого завершилася 2026-11-10; перед публічним запуском потрібен перехід на підтримуваний .NET LTS. Встановлений Unity Editor не має Linux Dedicated Server module/profile, а production API host allowlist і ASP.NET AllowedHosts досі прив'язані до Render. API ще не має окремих health/readiness endpoints, а довірені proxy IP не задані.

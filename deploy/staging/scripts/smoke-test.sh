@@ -29,11 +29,47 @@ echo "PASS Unity systemd service and UDP 7770 socket"
 
 server_id="$(tr -d '\r\n' < "$RAV_STAGING_SECRETS_DIR/server_id")"
 server_credential="$(tr -d '\r\n' < "$RAV_STAGING_SECRETS_DIR/server_credential")"
+bootstrap_user="$(staging_env_value RAV_STAGING_BOOTSTRAP_USER)"
+bootstrap_user="${bootstrap_user:-rav_staging_bootstrap}"
+[[ "$bootstrap_user" =~ ^[A-Za-z_][A-Za-z0-9_]*$ ]] || { echo "Invalid staging PostgreSQL bootstrap username." >&2; exit 2; }
 server_address="$(staging_env_value RAV_STAGING_SERVER_ADDRESS)"
 server_region="$(staging_env_value RAV_STAGING_REGION)"
 if [[ -z "$server_address" || "$server_address" == "REPLACE_WITH_VPS_PUBLIC_IPV4" ]]; then echo "Set the actual VPS public IPv4 in staging.env before smoke testing." >&2; exit 2; fi
 tmp="$(mktemp -d)"
-trap 'rm -rf -- "$tmp"' EXIT
+username=""
+user_id=""
+match_id=""
+cleanup() {
+  local exit_code="$?"
+  trap - EXIT
+  if [[ -n "$username" && "$username" =~ ^rav-smoke-[0-9]{14}-[0-9]+$ ]]; then
+    local cleanup_sql="BEGIN;
+CREATE TEMP TABLE rav_smoke_test_user_ids ON COMMIT DROP AS
+SELECT \"Id\" FROM \"Players\" WHERE \"Username\" = '$username';
+CREATE TEMP TABLE rav_smoke_test_match_ids ON COMMIT DROP AS
+SELECT DISTINCT m.\"Id\" FROM \"Matches\" m
+INNER JOIN \"MatchParticipants\" mp ON mp.\"MatchId\" = m.\"Id\"
+WHERE mp.\"UserId\" IN (SELECT \"Id\" FROM rav_smoke_test_user_ids);
+DELETE FROM \"MatchParticipants\" WHERE \"MatchId\" IN (SELECT \"Id\" FROM rav_smoke_test_match_ids);
+DELETE FROM \"Matches\" WHERE \"Id\" IN (SELECT \"Id\" FROM rav_smoke_test_match_ids);
+DELETE FROM \"MatchParticipants\" WHERE \"UserId\" IN (SELECT \"Id\" FROM \"Players\" WHERE \"Username\" = '$username');
+DELETE FROM \"ConnectionTickets\" WHERE \"UserId\" IN (SELECT \"Id\" FROM \"Players\" WHERE \"Username\" = '$username');
+DELETE FROM \"UserSessions\" WHERE \"UserId\" IN (SELECT \"Id\" FROM \"Players\" WHERE \"Username\" = '$username');
+DELETE FROM \"UserVehicleResearches\" WHERE \"UserId\" IN (SELECT \"Id\" FROM \"Players\" WHERE \"Username\" = '$username');
+DELETE FROM \"UserVehicles\" WHERE \"UserId\" IN (SELECT \"Id\" FROM \"Players\" WHERE \"Username\" = '$username');
+DELETE FROM \"Players\" WHERE \"Username\" = '$username';
+COMMIT;"
+    if rav_compose exec -T postgres psql --username="$bootstrap_user" --dbname="$RAV_STAGING_DB" --set=ON_ERROR_STOP=1 --command="$cleanup_sql" >/dev/null; then
+      echo "PASS temporary smoke-test player and match rows removed"
+    else
+      echo "WARN temporary smoke-test cleanup failed; inspect staging test rows before owner access." >&2
+      exit_code=1
+    fi
+  fi
+  rm -rf -- "$tmp"
+  exit "$exit_code"
+}
+trap cleanup EXIT
 printf 'header = "X-Server-Id: %s"\nheader = "X-Server-Credential: %s"\n' "$server_id" "$server_credential" > "$tmp/server-auth.cfg"
 chmod 0600 "$tmp/server-auth.cfg"
 registration="$(jq -n --arg region "$server_region" --arg address "$server_address" '{region:$region,address:$address,port:7770,maxPlayers:20}')"
@@ -52,9 +88,17 @@ register_body="$(jq -n --arg username "$username" --arg password "$password" '{u
 status="$(curl --silent --show-error --output "$tmp/auth.json" --write-out '%{http_code}' --header 'Content-Type: application/json' --data "$register_body" "$api_base/auth/register")"
 [[ "$status" == 200 ]] || { echo "Staging test-player registration returned HTTP $status." >&2; exit 1; }
 access_token="$(jq -er '.token' "$tmp/auth.json")"
+login_body="$(jq -n --arg username "$username" --arg password "$password" '{username:$username,password:$password}')"
+status="$(curl --silent --show-error --output "$tmp/login.json" --write-out '%{http_code}' --header 'Content-Type: application/json' --data "$login_body" "$api_base/auth/login")"
+[[ "$status" == 200 ]] || { echo "Staging test-player login returned HTTP $status." >&2; exit 1; }
+access_token="$(jq -er '.token' "$tmp/login.json")"
 printf 'header = "Authorization: Bearer %s"\n' "$access_token" > "$tmp/player-auth.cfg"
 chmod 0600 "$tmp/player-auth.cfg"
 user_id="$(printf '%s' "$access_token" | python3 -c 'import base64,sys; s=sys.stdin.read().split(".")[1]; print(base64.urlsafe_b64decode(s + "="*((4-len(s)%4)%4)).decode())' | jq -er '."http://schemas.xmlsoap.org/ws/2005/05/identity/claims/nameidentifier" // .nameid // .sub')"
+[[ "$user_id" =~ ^[0-9]+$ ]] || { echo "Could not identify the staging test player for cleanup." >&2; exit 1; }
+curl --fail --silent --show-error --config "$tmp/player-auth.cfg" "$api_base/players/me" -o "$tmp/profile.json"
+jq -e '.bolts == 1000 and .freeXp == 500 and .adamant == 0 and .activeVehicleCode == "ia_l1_starter" and any(.ownedVehicles[]; .code == "ia_l1_starter" and .isActive == true and .isResearched == true)' "$tmp/profile.json" >/dev/null
+echo "PASS player registration/login, JWT profile, starting resources, and IA starter vehicle"
 ticket_request="$(jq -n --arg id "$server_id" '{serverId:$id}')"
 status="$(curl --silent --show-error --output "$tmp/ticket.json" --write-out '%{http_code}' --config "$tmp/player-auth.cfg" --header 'Content-Type: application/json' --data "$ticket_request" "$api_base/connection-tickets")"
 [[ "$status" == 200 ]] || { echo "Connection-ticket issue returned HTTP $status." >&2; exit 1; }
@@ -68,9 +112,11 @@ echo "PASS authentication, ticket issue/redemption, and replay rejection"
 
 curl --fail --silent --show-error --config "$tmp/player-auth.cfg" "$api_base/user-vehicles/me" -o "$tmp/vehicles.json"
 vehicle_id="$(jq -er '.vehicles[0].vehicleId' "$tmp/vehicles.json")"
-match_body="$(jq -n --argjson userId "$user_id" --argjson vehicleId "$vehicle_id" '{map:"default_map",participants:[{userId:$userId,vehicleId:$vehicleId,team:1}]}')"
+match_body="$(jq -n --argjson userId "$user_id" --argjson vehicleId "$vehicle_id" '{map:"demo_map",participants:[{userId:$userId,vehicleId:$vehicleId,team:1}]}')"
 status="$(curl --silent --show-error --output "$tmp/match.json" --write-out '%{http_code}' --config "$tmp/server-auth.cfg" --header 'Content-Type: application/json' --data "$match_body" "$api_base/matches/start")"
 [[ "$status" == 200 ]] && jq -e '.matchId > 0' "$tmp/match.json" >/dev/null || { echo "Backend match-record creation failed (HTTP $status)." >&2; exit 1; }
+match_id="$(jq -er '.matchId' "$tmp/match.json")"
+[[ "$match_id" =~ ^[0-9]+$ ]] || { echo "Could not identify the staging test match for cleanup." >&2; exit 1; }
 echo "PASS staging backend match-record creation"
 
 dtls_probe="$(staging_env_value RAV_STAGING_DTLS_PROBE)"

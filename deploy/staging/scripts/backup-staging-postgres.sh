@@ -14,7 +14,7 @@ destination="$backup_dir/rav-staging-$stamp.dump"
 temporary="$(mktemp "$backup_dir/.rav-staging-$stamp.XXXXXX")"
 trap 'rm -f -- "$temporary"' EXIT
 rav_compose exec -T postgres sh -eu -c 'export PGPASSWORD="$(cat /run/secrets/db_bootstrap_password)" PGHOST=postgres PGPORT=5432 PGSSLMODE=verify-full PGSSLROOTCERT=/var/lib/postgresql/tls/ca.crt; exec pg_dump --username="$POSTGRES_USER" --format=custom --no-owner --no-privileges --dbname="$POSTGRES_DB"' > "$temporary"
-pg_restore --list "$temporary" >/dev/null
+rav_compose exec -T postgres pg_restore --list < "$temporary" >/dev/null
 chmod 0600 "$temporary"
 mv -- "$temporary" "$destination"
 trap - EXIT

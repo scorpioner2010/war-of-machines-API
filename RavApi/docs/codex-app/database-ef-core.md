@@ -5,7 +5,7 @@ The app uses EF Core 8 with PostgreSQL through Npgsql. `Program.cs` resolves the
 
 `SeedData.Initialize` updates existing vehicles by `Code`, so seeded balance changes are applied only when the explicit seed switch is enabled. The security migration is additive and does not alter gameplay formulas.
 
-When the database has no players, the development-only `testuser` seed receives `1,000` Bolts and `500` Free XP (MMR remains `1,000`). The seed creates this profile only for an empty player table; it does not rewrite existing account balances.
+When `Database:SeedDevelopmentFixtures=true` and the database has no players, the development-only `testuser` seed receives `1,000` Bolts and `500` Free XP (MMR remains `1,000`) and a demo match is created. This flag is disabled by default, including in local Development; enable it only for a disposable test database. Staging can seed maps and vehicle catalog without creating the predictable `testuser/test123` account or demo match.
 
 ## Owner Files
 - `Data/AppDbContext.cs` - DbSets, relationships, indexes, check constraints, delete behavior.
@@ -27,7 +27,8 @@ When the database has no players, the development-only `testuser` seed receives 
 - `Migrations/AppDbContextModelSnapshot.cs` - current EF Core model snapshot.
 
 ## Important Configuration
-- `DATABASE_URL` - preferred connection value; PostgreSQL URL values default to `SslMode=Require` unless overridden by query string.
+- `DATABASE_URL` - preferred connection value; PostgreSQL URL values default to `SslMode=Require` unless overridden by query string or `Database:SslMode`.
+- `Database:SslMode` and `Database:RootCertificate` - optional TLS validation mode and CA certificate path; use `VerifyFull` plus the provider CA when available.
 - `ConnectionStrings:DefaultConnection` / `ConnectionStrings__DefaultConnection` - fallback connection value.
 - `appsettings.json` has an empty `ConnectionStrings:DefaultConnection`; local values should come from `.env.local` or environment variables.
 
@@ -40,7 +41,7 @@ When the database has no players, the development-only `testuser` seed receives 
 
 ## Routes / Contracts
 - Database state is used by all controller routes. Unity Server registry is PostgreSQL-backed, so API restarts do not erase records; discovery filters stale heartbeats.
-- Startup calls `db.Database.Migrate()` before `SeedData.Initialize(db)` only when the corresponding explicit flags are enabled. Production must apply reviewed migrations as a controlled deployment step.
+- Startup calls `db.Database.Migrate()` and the catalog seed only when their explicit flags are enabled. Development fixture accounts/matches require the separate `Database:SeedDevelopmentFixtures` opt-in. Production must apply reviewed migrations as a controlled deployment step.
 
 ## Tests
 - No automated database or migration tests were found.
