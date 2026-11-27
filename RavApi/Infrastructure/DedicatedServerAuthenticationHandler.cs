@@ -2,6 +2,7 @@ using System.Security.Claims;
 using System.Text.Encodings.Web;
 using Microsoft.AspNetCore.Authentication;
 using Microsoft.Extensions.Options;
+using RavApi.Logging;
 
 namespace RavApi.Infrastructure;
 
@@ -27,6 +28,7 @@ public sealed class DedicatedServerAuthenticationHandler : AuthenticationHandler
         if (!Request.Headers.TryGetValue("X-Server-Id", out var serverIdValues)
             || !Request.Headers.TryGetValue("X-Server-Credential", out var credentialValues))
         {
+            LogRejection("server_credentials_missing");
             return AuthenticateResult.NoResult();
         }
 
@@ -34,12 +36,14 @@ public sealed class DedicatedServerAuthenticationHandler : AuthenticationHandler
         string credential = credentialValues.ToString();
         if (serverId.Length == 0 || credential.Length == 0)
         {
+            LogRejection("server_credentials_empty");
             return AuthenticateResult.Fail("Dedicated server credentials are invalid.");
         }
 
         bool valid = await _validator.ValidateAsync(serverId, credential, Context.RequestAborted);
         if (!valid)
         {
+            LogRejection("server_credentials_invalid");
             return AuthenticateResult.Fail("Dedicated server credentials are invalid.");
         }
 
@@ -53,5 +57,21 @@ public sealed class DedicatedServerAuthenticationHandler : AuthenticationHandler
         var principal = new ClaimsPrincipal(identity);
         var ticket = new AuthenticationTicket(principal, SchemeName);
         return AuthenticateResult.Success(ticket);
+    }
+
+    private void LogRejection(string reason)
+    {
+        string requestId = Guid.TryParse(Request.Headers["X-RAV-Request-Id"].ToString(), out Guid suppliedRequestId)
+            ? suppliedRequestId.ToString("N")
+            : Context.TraceIdentifier;
+        string message = $"dedicated_server_auth_rejected reason={reason} request_id={requestId} trace_id={Context.TraceIdentifier}";
+        Logger.LogWarning("{AuthenticationDiagnostic}", message);
+        InMemoryLogStore.Add(new LogEvent
+        {
+            Timestamp = DateTimeOffset.UtcNow,
+            Level = LogLevel.Warning,
+            Category = "RavApi.DedicatedServerAuthentication",
+            Message = message
+        });
     }
 }

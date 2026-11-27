@@ -25,7 +25,7 @@ Configuration comes from standard ASP.NET Core providers plus `.env.local`, whic
 - `Jwt:AccessTokenMinutes` - bounded access-token lifetime (5–120 minutes).
 - `Authentication:RefreshTokenLifetimeDays` - persisted refresh-session lifetime.
 - `Authentication:ConnectionTicketLifetimeSeconds` - bounded one-time ticket lifetime (5–120 seconds).
-- `Authentication:ServerDelegatedTokenMinutes` - bounded delegated profile-token lifetime (1–15 minutes).
+- `Authentication:ServerDelegatedTokenMinutes` - bounded delegated player-token lifetime (5–20 minutes; defaults to 20). Active Dedicated Server sessions renew before expiry while the linked player session remains valid.
 - `DedicatedServers:Provisioned__*` - protected bootstrap server identities used before a server row exists; never commit real credentials.
 - `DedicatedServers:HeartbeatTimeoutSeconds` - discovery expiration window.
 - `Cors:AllowedOrigins` - explicit browser origins; Unity does not need CORS.

@@ -5,6 +5,7 @@ using System.Security.Claims;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Logging;
 using RavApi.Data;
 using RavApi.Infrastructure;
 using RavApi.Models;
@@ -17,6 +18,7 @@ namespace RavApi.Controllers
     public class MatchesController : ControllerBase
     {
         private readonly AppDbContext _db;
+        private readonly ILogger<MatchesController> _logger;
 
         // --- Параметри нарахувань ---
         private const int XpWinBase = 300;
@@ -46,9 +48,10 @@ namespace RavApi.Controllers
         // --- Відсоток Free XP ---
         private const double FreeXpPercent = 0.05;
 
-        public MatchesController(AppDbContext db)
+        public MatchesController(AppDbContext db, ILogger<MatchesController> logger)
         {
             _db = db;
+            _logger = logger;
         }
 
         private string? CurrentDedicatedServerId()
@@ -149,9 +152,17 @@ namespace RavApi.Controllers
         [Authorize(Policy = "dedicatedServer")]
         public IActionResult EndMatch(int matchId, [FromBody] EndMatchRequest req)
         {
+            int participantCount = req?.Participants?.Count ?? 0;
+            string requestId = GetRequestId();
+            _logger.LogInformation(
+                "Match finalization started. MatchId={MatchId} ParticipantCount={ParticipantCount} RequestId={RequestId}",
+                matchId,
+                participantCount,
+                requestId);
+
             if (req == null || req.Participants == null || req.Participants.Count == 0)
             {
-                return BadRequest("Participants required.");
+                return RejectEndMatch(matchId, requestId, "participants_missing", BadRequest("Participants required."));
             }
 
             var strategy = _db.Database.CreateExecutionStrategy();
@@ -165,19 +176,24 @@ namespace RavApi.Controllers
                 if (match == null)
                 {
                     tx.Rollback();
-                    return NotFound("Match not found.");
+                    return RejectEndMatch(matchId, requestId, "match_not_found", NotFound("Match not found."));
                 }
 
                 if (!string.Equals(match.DedicatedServerId, CurrentDedicatedServerId(), StringComparison.Ordinal))
                 {
                     tx.Rollback();
-                    return Forbid();
+                    return RejectEndMatch(matchId, requestId, "dedicated_server_mismatch", Forbid());
                 }
 
                 if (match.EndedAt != null)
                 {
                     List<MatchParticipantResponse> existingResults = GetParticipantResponses(match.Id);
                     tx.Commit();
+                    _logger.LogInformation(
+                        "Match finalization was already complete. MatchId={MatchId} ParticipantCount={ParticipantCount} RequestId={RequestId}",
+                        matchId,
+                        existingResults.Count,
+                        requestId);
                     return Ok(new { ok = true, alreadyProcessed = true, participants = existingResults });
                 }
 
@@ -187,7 +203,7 @@ namespace RavApi.Controllers
                 if (roster.Count == 0 || roster.Count != req.Participants.Count)
                 {
                     tx.Rollback();
-                    return BadRequest("Match results do not match the authoritative roster.");
+                    return RejectEndMatch(matchId, requestId, "participant_roster_count_mismatch", BadRequest("Match results do not match the authoritative roster."));
                 }
 
                 var duplicateUsers = req.Participants
@@ -199,14 +215,14 @@ namespace RavApi.Controllers
                 if (duplicateUsers.Count > 0)
                 {
                     tx.Rollback();
-                    return BadRequest($"Duplicate participants: {string.Join(",", duplicateUsers)}");
+                    return RejectEndMatch(matchId, requestId, "duplicate_participants", BadRequest($"Duplicate participants: {string.Join(",", duplicateUsers)}"));
                 }
 
                 var userIds = req.Participants.Select(p => p.UserId).Distinct().ToList();
                 if (userIds.Any(userId => !roster.ContainsKey(userId)))
                 {
                     tx.Rollback();
-                    return BadRequest("Match results contain an unknown participant.");
+                    return RejectEndMatch(matchId, requestId, "unknown_participant", BadRequest("Match results contain an unknown participant."));
                 }
 
                 var users = _db.Players.Where(u => userIds.Contains(u.Id)).ToDictionary(u => u.Id, u => u);
@@ -215,7 +231,7 @@ namespace RavApi.Controllers
                 if (missingUsers.Count > 0)
                 {
                     tx.Rollback();
-                    return BadRequest($"Unknown users: {string.Join(",", missingUsers)}");
+                    return RejectEndMatch(matchId, requestId, "participant_user_missing", BadRequest($"Unknown users: {string.Join(",", missingUsers)}"));
                 }
 
                 var teamToUserIds = req.Participants
@@ -238,13 +254,13 @@ namespace RavApi.Controllers
                     if (rosterParticipant.VehicleId != raw.VehicleId || rosterParticipant.Team != raw.Team)
                     {
                         tx.Rollback();
-                        return BadRequest("Match results changed the authoritative participant roster.");
+                        return RejectEndMatch(matchId, requestId, "participant_roster_changed", BadRequest("Match results changed the authoritative participant roster."));
                     }
 
                     if (rosterParticipant.IsFinalized)
                     {
                         tx.Rollback();
-                        return Conflict("Match participant has already been finalized.");
+                        return RejectEndMatch(matchId, requestId, "participant_already_finalized", Conflict("Match participant has already been finalized."));
                     }
 
                     int kills = Math.Clamp(raw.Kills, MinKills, MaxKillsPerBattle);
@@ -310,17 +326,50 @@ namespace RavApi.Controllers
                     List<MatchParticipantResponse> participants = GetParticipantResponses(match.Id);
                     tx.Commit();
 
+                    _logger.LogInformation(
+                        "Match finalization completed. MatchId={MatchId} ParticipantCount={ParticipantCount} RequestId={RequestId}",
+                        matchId,
+                        participants.Count,
+                        requestId);
+
                     return Ok(new { ok = true, participants });
                 });
             }
             catch (DbUpdateConcurrencyException)
             {
+                _logger.LogWarning(
+                    "Match finalization lost a concurrency race. MatchId={MatchId} RequestId={RequestId}",
+                    matchId,
+                    requestId);
                 return Conflict("Match was finalized by another request.");
             }
-            catch (DbUpdateException)
+            catch (DbUpdateException exception)
             {
+                _logger.LogError(
+                    exception,
+                    "Database update failed while finalizing match. MatchId={MatchId} ExceptionType={ExceptionType} RequestId={RequestId}",
+                    matchId,
+                    exception.GetType().Name,
+                    requestId);
                 return Conflict("Match result could not be finalized.");
             }
+        }
+
+        private IActionResult RejectEndMatch(int matchId, string requestId, string reason, IActionResult response)
+        {
+            _logger.LogWarning(
+                "Match finalization rejected. MatchId={MatchId} Reason={Reason} RequestId={RequestId}",
+                matchId,
+                reason,
+                requestId);
+            return response;
+        }
+
+        private string GetRequestId()
+        {
+            return Guid.TryParse(Request.Headers["X-RAV-Request-Id"].ToString(), out Guid requestId)
+                ? requestId.ToString("N")
+                : HttpContext.TraceIdentifier;
         }
 
         private static string NormalizeResult(string input)

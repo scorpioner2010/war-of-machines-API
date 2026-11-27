@@ -33,6 +33,13 @@ The app has a static in-memory log store and admin routes for viewing it. Startu
 - Do not log secrets or PII. Auth logging records only the username; passwords, JWTs, refresh tokens, connection tickets and server credentials are excluded. Global exception logging records the path and exception server-side, while the client receives generic ProblemDetails.
 - Production performance investigations should first check available logs and database/provider diagnostics; tracing and health checks are not currently present.
 
+## Match and profile request diagnostics
+
+- `Program.cs` logs match routes, `/players/me`, and all other non-health failures with safe request/flow IDs, route template, HTTP status, elapsed milliseconds, API process ID, and ASP.NET trace ID. No request bodies, query strings, or authorization headers are logged.
+- Match finalization controller events include participant count and a bounded validation/database failure category, keyed by the same request ID.
+- JWT and Dedicated Server rejection events distinguish expired/invalid JWTs, missing claims, inactive sessions, missing server headers, and invalid server credentials without recording credential contents.
+- These events go to the normal ASP.NET logger and the existing bounded `/admin/logs` in-memory buffer. The buffer is lost on process restart; the host/container stdout log is the durable source where configured.
+
 
 ## Stage 2 health routes
 

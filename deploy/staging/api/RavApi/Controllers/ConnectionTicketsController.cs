@@ -124,13 +124,15 @@ public sealed class ConnectionTicketsController : ControllerBase
                 await _db.SaveChangesAsync(cancellationToken);
                 await transaction.CommitAsync(cancellationToken);
 
+                var delegatedToken = await CreateDelegatedAccessToken(ticket.UserId, ticket.SessionId, cancellationToken);
                 return new ConnectionTicketRedemptionResponse
                 {
                     Accepted = true,
                     UserId = ticket.UserId,
                     SessionId = ticket.SessionId,
                     ServerId = serverId,
-                    AccessToken = await CreateDelegatedAccessToken(ticket.UserId, ticket.SessionId, cancellationToken)
+                    AccessToken = delegatedToken.Token,
+                    AccessTokenExpiresAtUtc = delegatedToken.ExpiresAtUtc
                 };
             });
         }
@@ -144,14 +146,54 @@ public sealed class ConnectionTicketsController : ControllerBase
             : Ok(redemption);
     }
 
-    private async Task<string> CreateDelegatedAccessToken(int userId, Guid sessionId, CancellationToken cancellationToken)
+    [HttpPost("renew")]
+    [Authorize(Policy = "dedicatedServer")]
+    public async Task<ActionResult<DelegatedTokenRenewalResponse>> RenewDelegatedToken(
+        [FromBody] DelegatedTokenRenewalRequest request,
+        CancellationToken cancellationToken)
+    {
+        string? serverId = User.FindFirstValue(DedicatedServerAuthenticationHandler.ServerIdClaim);
+        if (string.IsNullOrWhiteSpace(serverId) || request.SessionId == Guid.Empty)
+        {
+            return Forbid();
+        }
+
+        DateTimeOffset now = DateTimeOffset.UtcNow;
+        UserSession? session = await _db.UserSessions
+            .SingleOrDefaultAsync(item => item.Id == request.SessionId, cancellationToken);
+        if (session == null || session.RevokedAtUtc != null || session.ExpiresAtUtc <= now)
+        {
+            return Unauthorized("The player session is no longer active.");
+        }
+
+        bool sessionWasRedeemedByThisServer = await _db.ConnectionTickets
+            .AsNoTracking()
+            .AnyAsync(ticket => ticket.SessionId == session.Id
+                && ticket.UserId == session.UserId
+                && ticket.ServerId == serverId
+                && ticket.RedeemedAtUtc != null,
+                cancellationToken);
+        if (!sessionWasRedeemedByThisServer)
+        {
+            return Forbid();
+        }
+
+        var token = await CreateDelegatedAccessToken(session.UserId, session.Id, cancellationToken);
+        return Ok(new DelegatedTokenRenewalResponse
+        {
+            AccessToken = token.Token,
+            AccessTokenExpiresAtUtc = token.ExpiresAtUtc
+        });
+    }
+
+    private async Task<AccessTokenResult> CreateDelegatedAccessToken(int userId, Guid sessionId, CancellationToken cancellationToken)
     {
         Player user = await _db.Players.SingleAsync(item => item.Id == userId, cancellationToken);
         int lifetimeMinutes = Math.Clamp(
-            _configuration.GetValue("Authentication:ServerDelegatedTokenMinutes", 5),
-            1,
-            15);
-        return _jwtTokenService.CreateAccessToken(user, sessionId, lifetimeMinutes).Token;
+            _configuration.GetValue("Authentication:ServerDelegatedTokenMinutes", 20),
+            5,
+            20);
+        return _jwtTokenService.CreateAccessToken(user, sessionId, lifetimeMinutes);
     }
 
     private int GetTicketLifetimeSeconds()
@@ -212,4 +254,17 @@ public sealed class ConnectionTicketRedemptionResponse
     public Guid SessionId { get; set; }
     public string ServerId { get; set; } = string.Empty;
     public string AccessToken { get; set; } = string.Empty;
+    public DateTimeOffset AccessTokenExpiresAtUtc { get; set; }
+}
+
+public sealed class DelegatedTokenRenewalRequest
+{
+    [Required]
+    public Guid SessionId { get; set; }
+}
+
+public sealed class DelegatedTokenRenewalResponse
+{
+    public string AccessToken { get; set; } = string.Empty;
+    public DateTimeOffset AccessTokenExpiresAtUtc { get; set; }
 }

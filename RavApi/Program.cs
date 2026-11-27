@@ -1,4 +1,5 @@
 using System;
+using System.Diagnostics;
 using System.Globalization;
 using System.IO;
 using System.Linq;
@@ -10,6 +11,7 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.DataProtection;
 using Microsoft.AspNetCore.HttpOverrides;
 using Microsoft.AspNetCore.RateLimiting;
+using Microsoft.AspNetCore.Routing;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using System.Threading.RateLimiting;
@@ -191,11 +193,20 @@ builder.Services
         o.SaveToken = false;
         o.Events = new JwtBearerEvents
         {
+            OnAuthenticationFailed = context =>
+            {
+                string reason = context.Exception is SecurityTokenExpiredException
+                    ? "jwt_expired"
+                    : "jwt_validation_failed_" + context.Exception.GetType().Name;
+                RecordAuthenticationDiagnostic(context.HttpContext, reason);
+                return Task.CompletedTask;
+            },
             OnTokenValidated = async context =>
             {
                 string? sessionIdValue = context.Principal?.FindFirst("sid")?.Value;
                 if (!Guid.TryParse(sessionIdValue, out Guid sessionId))
                 {
+                    RecordAuthenticationDiagnostic(context.HttpContext, "session_claim_missing");
                     context.Fail("Session claim is missing.");
                     return;
                 }
@@ -204,6 +215,7 @@ builder.Services
                         context.Principal?.FindFirstValue(ClaimTypes.NameIdentifier),
                         out int tokenUserId))
                 {
+                    RecordAuthenticationDiagnostic(context.HttpContext, "user_claim_missing");
                     context.Fail("User claim is missing.");
                     return;
                 }
@@ -217,6 +229,7 @@ builder.Services
                     context.HttpContext.RequestAborted);
                 if (!active)
                 {
+                    RecordAuthenticationDiagnostic(context.HttpContext, "server_session_inactive_or_expired");
                     context.Fail("Session is revoked or expired.");
                 }
             }
@@ -253,6 +266,57 @@ builder.Services.AddSingleton<JwtTokenService>();
 // ❌ no global logging providers (only explicit events we add ourselves)
 
 var app = builder.Build();
+string apiInstanceId = Guid.NewGuid().ToString("N");
+
+// Keep request diagnostics focused on match/profile traffic and all non-health failures.
+// IDs are accepted only as GUIDs; authorization headers, query strings and bodies are never logged.
+app.Use(async (context, next) =>
+{
+    bool isHealth = context.Request.Path.StartsWithSegments("/health");
+    bool isMatchRequest = context.Request.Path.StartsWithSegments("/matches");
+    bool isProfileRequest = context.Request.Path.Equals("/players/me", StringComparison.OrdinalIgnoreCase)
+                            || context.Request.Path.StartsWithSegments("/players/me/");
+    string requestId = Guid.TryParse(context.Request.Headers["X-RAV-Request-Id"].ToString(), out Guid suppliedRequestId)
+        ? suppliedRequestId.ToString("N")
+        : context.TraceIdentifier;
+    string flowId = Guid.TryParse(context.Request.Headers["X-RAV-Flow-Id"].ToString(), out Guid suppliedFlowId)
+        ? suppliedFlowId.ToString("N")
+        : "-";
+    Stopwatch stopwatch = Stopwatch.StartNew();
+
+    await next();
+
+    stopwatch.Stop();
+    int statusCode = context.Response.StatusCode;
+    if (!isMatchRequest && !isProfileRequest && (statusCode < 400 || isHealth))
+    {
+        return;
+    }
+
+    string route = context.GetEndpoint() is RouteEndpoint routeEndpoint
+        ? routeEndpoint.RoutePattern.RawText ?? "unknown"
+        : "unmatched";
+    string matchId = context.Request.RouteValues.TryGetValue("matchId", out object? routeMatchId)
+        ? Convert.ToString(routeMatchId, CultureInfo.InvariantCulture) ?? "-"
+        : "-";
+    LogLevel level = statusCode >= 500
+        ? LogLevel.Error
+        : statusCode >= 400
+            ? LogLevel.Warning
+            : LogLevel.Information;
+    string message = string.Create(
+        CultureInfo.InvariantCulture,
+        $"request_completed api_instance_id={apiInstanceId} request_id={requestId} flow_id={flowId} trace_id={context.TraceIdentifier} method={context.Request.Method} route={route} match_id={matchId} status={statusCode} duration_ms={stopwatch.ElapsedMilliseconds}");
+
+    app.Logger.Log(level, "{RequestDiagnostic}", message);
+    InMemoryLogStore.Add(new LogEvent
+    {
+        Timestamp = DateTimeOffset.UtcNow,
+        Level = level,
+        Category = "RavApi.RequestDiagnostics",
+        Message = message
+    });
+});
 
 app.UseExceptionHandler();
 app.UseForwardedHeaders();
@@ -454,6 +518,29 @@ app.MapPost("/admin/logs/clear", () =>
 }).RequireAuthorization("admin");
 
 app.Run();
+
+static void RecordAuthenticationDiagnostic(HttpContext context, string reason)
+{
+    string requestId = Guid.TryParse(context.Request.Headers["X-RAV-Request-Id"].ToString(), out Guid suppliedRequestId)
+        ? suppliedRequestId.ToString("N")
+        : context.TraceIdentifier;
+    string flowId = Guid.TryParse(context.Request.Headers["X-RAV-Flow-Id"].ToString(), out Guid suppliedFlowId)
+        ? suppliedFlowId.ToString("N")
+        : "-";
+    string route = context.GetEndpoint() is RouteEndpoint routeEndpoint
+        ? routeEndpoint.RoutePattern.RawText ?? "unknown"
+        : "unmatched";
+    string message = $"authentication_rejected route={route} reason={reason} request_id={requestId} flow_id={flowId} trace_id={context.TraceIdentifier}";
+    ILogger logger = context.RequestServices.GetRequiredService<ILoggerFactory>().CreateLogger("RavApi.AuthenticationDiagnostics");
+    logger.LogWarning("{AuthenticationDiagnostic}", message);
+    InMemoryLogStore.Add(new LogEvent
+    {
+        Timestamp = DateTimeOffset.UtcNow,
+        Level = LogLevel.Warning,
+        Category = "RavApi.AuthenticationDiagnostics",
+        Message = message
+    });
+}
 
 static string GetRateLimitPartition(HttpContext context)
 {

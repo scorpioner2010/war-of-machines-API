@@ -5,7 +5,7 @@ Users register and login with username/password over the HTTPS API. Passwords ar
 
 Newly registered players start with MMR `0`, `1,000` Bolts, `500` Free XP, and `0` Adamant; registration also assigns the IA Skirmisher starter vehicle. Changing these defaults affects future registrations only, not persisted accounts.
 
-Dedicated Servers use a separate `DedicatedServer` authentication scheme with `X-Server-Id` and `X-Server-Credential` headers. Server credentials are validated against a stored hash or protected bootstrap configuration and receive a `dedicatedServer` policy, never a player role. Connection tickets are opaque, 32-byte random values, stored only as hashes, bound to user/session/server, short-lived, and atomically redeemed once. Redemption returns a short-lived delegated player token to the server over HTTPS for existing profile reads; it does not grant server-only policy access.
+Dedicated Servers use a separate `DedicatedServer` authentication scheme with `X-Server-Id` and `X-Server-Credential` headers. Server credentials are validated against a stored hash or protected bootstrap configuration and receive a `dedicatedServer` policy, never a player role. Connection tickets are opaque, 32-byte random values, stored only as hashes, bound to user/session/server, short-lived, and atomically redeemed once. Redemption returns a delegated player token to the server over HTTPS for profile, vehicle, and match-session API calls. Each token lasts 20 minutes; the server renews it before expiry through the dedicated-server-only endpoint, bound to an active player session and a ticket redeemed by that same server. Every API request still checks that the underlying player session is active, so logout revokes access immediately. The token does not grant server-only policy access.
 
 ## Owner Files
 - `Program.cs` - JWT bearer registration/validation, active-session check, auth schemes and policies.
@@ -20,7 +20,7 @@ Dedicated Servers use a separate `DedicatedServer` authentication scheme with `X
 - `Jwt:Key` / `Jwt__Key` - startup-required signing key in `Program.cs`.
 - There is no hardcoded JWT fallback. Startup fails when `Jwt:Key` is absent or shorter than 32 characters.
 - `RequireHttpsMetadata = true`; issuer, audience, signature, lifetime, and signing key are all validated with 30-second clock skew.
-- `Authentication:RefreshTokenLifetimeDays`, `Authentication:ConnectionTicketLifetimeSeconds`, and `Authentication:ServerDelegatedTokenMinutes` bound session/ticket lifetimes.
+- `Authentication:RefreshTokenLifetimeDays`, `Authentication:ConnectionTicketLifetimeSeconds`, and `Authentication:ServerDelegatedTokenMinutes` bound session/ticket lifetimes. Delegated player tokens default to 20 minutes (configurable 5–20) and are renewed for active server sessions before expiry.
 
 ## Dependencies
 - `BCrypt.Net-Next` hashes and verifies passwords.
@@ -32,6 +32,7 @@ Dedicated Servers use a separate `DedicatedServer` authentication scheme with `X
 - `POST /auth/register` and `POST /auth/login` return `{ token, refreshToken, expiresAtUtc }`; both are rate-limited and validate username/password bounds. Registration requires a 3–32 character username and an 8–128 character password; login accepts existing 1–32 character usernames for compatibility with legacy local accounts and requires a non-empty 1–128 character password.
 - `POST /auth/refresh` rotates the refresh token; the previous value is rejected. `POST /auth/logout` revokes the current `sid` session.
 - `POST /connection-tickets` requires a player JWT. `POST /connection-tickets/redeem` requires the Dedicated Server policy.
+- `POST /connection-tickets/renew` is restricted to an authenticated Dedicated Server and renews a delegated token only for an active player session with a ticket already redeemed by that server.
 - `/matches/start`, `/matches/{id}/end`, and Dedicated Server register/heartbeat/unregister require the Dedicated Server policy; player JWTs are rejected.
 - Admin pages/log endpoints require the `admin` role. Vehicle link mutations require the `admin` policy.
 
