@@ -196,3 +196,96 @@
 - Bash syntax validation and focused diff checks passed.
 - Verified through the Unity panel workflow: fresh API image built, staged, and activated with rollback protection; HTTPS health/readiness passed. PostgreSQL and Caddy were not restarted and the database schema/data were not changed.
 - Result: the Netcup API activation step and complete staging workflow passed. No commit or push.
+
+## 2026-11-27 — Add correlated diagnostics for post-battle API failures — IN_PROGRESS
+- **User request:** Instrument the backend API to help diagnose a Unity `Server API is not available!` popup after ~10-minute battles, in coordination with Unity client and Dedicated Server logs.
+- **Scope:** Trace existing ASP.NET request logging, exception handling, authentication/session expiry, and match result/profile endpoints. Add safe structured diagnostics correlated by request trace and match/session identifiers where available. Never log authorization headers, tokens, passwords, connection strings, or request bodies. Do not change API behavior, schema, production, or Netcup services.
+- **Acceptance:** API logs record method/route, status, duration, trace ID, authenticated user identifier where safe, and sanitized exception category; endpoint/service logs identify match/result completion failures. Keep expected client validation/auth responses at appropriate levels and avoid high-volume body logging. Build passes; no commit/push.
+- **Start:** 2026-11-27 (Asia/Manila). **Status:** IN_PROGRESS.
+- **Next:** Inspect API logging setup and the match completion/result/profile endpoints after reading this journal.
+
+- 2026-11-27 CHECKPOINT: Added focused API request and auth failure diagnostics with safe request/flow IDs, and match-finalization outcome logs. Compile and diff validation remain.
+
+- 2026-11-27 COMPLETE: API and Unity assemblies compile successfully; git diff --check passes in both repositories. No live API/server, database, Netcup service, or Git history was changed. Match-end diagnostic code is ready for the next rebuilt/restarted run.
+
+## 2026-11-27 — Investigate API failure on post-match disconnect — COMPLETE
+- **Request:** Correlate the newly instrumented API logs with the user's latest Disconnect-after-battle failure. Inspect API-side recent logs and any confirmed endpoint/auth/DB failure before proposing a fix.
+- **Scope:** Read-only diagnostics first; change API source only if evidence establishes API ownership. No data/schema, production, or Netcup service changes; preserve existing dirty work; no commit/push.
+- **Acceptance:** Root cause supported by current logs; if API bug exists, fix and build; otherwise identify client/network lifecycle owner and report exact next action.
+- **Start:** 2026-11-27 (Asia/Manila). **Status:** COMPLETE.
+- **Result:** Correlated requests show `/players/me` returned HTTP 401 shortly after match completion while the match-end endpoint returned HTTP 200; API health stayed up. The configured delegated access-token lifetime was five minutes, shorter than a normal match plus return-to-menu/profile refresh. Raised the default/configured lifetime to 30 minutes (clamped to 5–60); active player-session checks remain on every request, preserving immediate logout revocation.
+- **Validation:** API build passed with 0 warnings and 0 errors. Local API was rebuilt through the existing panel workflow, restarted, and both HTTPS health endpoints returned 200. The panel confirmed fresh Dedicated Server registration/heartbeat. The staging deployment copy was updated in source but Netcup was not redeployed or restarted; no database/schema changes or commit/push.
+
+## 2026-11-27 — Set match delegated token to 20 minutes — IN PROGRESS (local gameplay validation pending)
+- **User request:** Reduce the Dedicated Server delegated access-token lifetime used for battles to 20 minutes while Unity automatically refreshes the player's separate main-menu token.
+- **Scope:** Keep the existing ticket/session validation and rotating refresh-token behavior. Update the API default, local/staging configuration, and deployment docs. Do not touch live Netcup services or database data.
+- **Acceptance:** New delegated tokens use 20 minutes with safe bounds, API builds cleanly, client refresh contract remains supported; no commit/push.
+- **Start:** 2026-11-27 (Asia/Manila). **Status:** IN_PROGRESS.
+- **Validation checkpoint:** API build passed (0 warnings/errors); the updated Local API is running and strict-TLS live/ready health checks return 200. The renewal route is registered and denies unauthenticated requests with 401. No environment override for the delegated token lifetime is set; source and appsettings default/clamp it to 20 minutes. The Unity server build has the renewal client, and local Dedicated Server heartbeat is fresh. A successful authenticated renewal and 20-minute elapsed-time test remain unverified without an active player session. The staging snapshot build was skipped after `--no-restore` found no assets file; no deployment or live Netcup service change.
+- **Checkpoint:** Confirmed the player access token and server delegated token are separate. Client receives a rotating player refresh token but never calls `/auth/refresh`; server connection persists through ReturnToMainMenu and uses the ticket delegated token for menu profile/vehicle operations. A fixed 20-minute delegated TTL without server renewal would break menu operations after 20 minutes. Add a dedicated-server-authenticated renewal endpoint bound to an active user session with a redeemed ticket for that server; update Unity server session renewal scheduling.
+- **Implementation checkpoint:** Added `POST /connection-tickets/renew`, requiring dedicated-server auth, an active UserSession, and a redeemed ticket bound to that server. Redemption now returns token expiry; delegated token default and maximum are 20 minutes. Mirrored API source and staging deployment snapshot; updated auth/config docs. No migration or live deploy.
+
+## 2026-11-27 — Commit and publish API/Unity work — COMPLETED
+- **User request:** Commit the API and Unity work with clear commit subjects, then push both repositories.
+- **Scope:** Inspect each repository's branch/upstream, staged and unstaged changes, and recent history. Commit only coherent requested project work with separate descriptive subjects. Never discard changes; do not force-push or overwrite remote history without explicit approval.
+- **Acceptance:** API and Unity changes are committed with clear names and pushed to their configured remotes if normal fast-forward publication is safe. Report commit IDs and any remaining unpublished work.
+- **Start:** 2026-11-27 (Asia/Manila). **Status:** IN_PROGRESS.
+- **Result:** API commit `604ef33 Add match diagnostics and 20-minute token renewal` and Unity commit `4a9445db Stabilize RAV multiplayer and local workflows` were created and pushed to their GitHub `main` branches using normal fast-forward pushes.
+- **Validation:** In each repository, local `HEAD` matches `origin/main`; staged diff checks passed before commit. No force push was used.
+- **Excluded local files:** This task journal remains uncommitted. The API repository also has generated `deploy/staging/api/RavApi/obj/` output untracked and excluded from the commit.
+
+## 2026-11-28 — Visualize the current robot progression tree — COMPLETED
+- **User request:** Analyze the current robot research tree and produce a visual representation showing which robot unlocks which, including concept/ghost robots, so the user can design a revised progression later.
+- **Scope:** Inspect API catalog/graph and any progression seed data as needed to corroborate the client view; create a current-state diagram only. Do not alter migrations, schema, catalog data, player data, or API behavior.
+- **Acceptance:** The artifact lists progression nodes with their current tier/status and depicts every prerequisite edge, distinguishing playable robots from concept entries. Verify node and edge counts against authoritative source data.
+- **Start:** 2026-11-28 (Asia/Manila). **Status:** IN_PROGRESS.
+- **Result:** Captured the current graph from the read-only staging API endpoint `GET /vehicles/graph` and cross-checked it against Unity's graph presentation and API seed data. The inline diagram in the task response shows all current unlock paths, costs, tiers, and playable/concept status. No database, catalog, migration, or runtime files were changed.
+- **Validation:** 21 nodes and 19 unique edges; 8 playable (`isVisible=true`) and 13 concept/unavailable (`isVisible=false`). Iron Alliance: 10 nodes (4 playable, 6 concepts); Nova Syndicate: 11 (4 playable, 7 concepts). There are two level-1 roots, one per faction; every node is reachable and all edge endpoints resolve.
+- **Limitation:** This records the currently served staging progression. The requested redesign and database migration have not started.
+- **Completed:** 2026-11-28 (Asia/Manila).
+## 2026-11-28 — Rename robot catalog entries in API and staging database — IN_PROGRESS
+- **User request:** Apply the user's 22 selected technical designations to existing robots in the RAV API/catalog and database, preserving the agreed research-tree placement; report when complete.
+- **Scope:** Inspect current API vehicle catalog, progression records, migrations, and database target; rename catalog records in source and staging data only. Preserve vehicle IDs, stats, faction/tier/research relationships unless a name-specific reference must be updated. Never modify production. Do not commit/push.
+- **Acceptance:** Establish the exact existing record count and mapping, update API source and staging database consistently, use a reversible/safe migration or data update as appropriate, verify every name and unchanged relationships, build/validate API and run `git diff --check`.
+- **Start:** 2026-11-28 15:31 Asia/Manila. **Status:** IN_PROGRESS.
+- **Initial constraint:** The prior verified staging graph journal records 21 robot nodes (Iron Alliance 10, Nova Syndicate 11), while the user's selected list has 22 names. Inspect the current catalog before applying names; do not silently create/delete a robot or discard a selected name.
+- **Read-only validation:** API seed source and live staging `GET /vehicles/graph` both contain 21 vehicle records (10 Iron Alliance, 11 Nova Syndicate). The user's selected list contains 22 names. The extra `N-19` name was used for a T3 concept placeholder in the prior diagram, but no such vehicle currently exists in source or staging. The current database also still has the original 19 progression links; the new diagram's topology has not been applied.
+- **Working tree before implementation:** pre-existing `deploy/staging/api/RavApi/obj/` untracked; this task added only its required journal entry so far. No source/catalog/migration/database changes made.
+- **Status:** BLOCKED — need the owner to choose whether to leave `N-19` unused or create a new T3 concept (which requires a source for its stats), and whether this pass should also replace current progression links with the approved diagram. Next: wait for that clarification, then update the same task entry and continue without repeating completed read-only checks.
+
+### Resume checkpoint — 2026-11-28 — owner clarified mapping scope
+- Owner authorized selecting one name to omit and expanded scope to Unity resource/file names, with no broken references and generic/data-driven vehicle metadata.
+- Decision: omit `N-19 Brimstone`; it was only the speculative extra concept node and is not an existing API record. Use the remaining 21 names for the 21 existing robot IDs. Apply the previously approved research-tree arrangement with the speculative node omitted (21 vehicles remain: 10 IA / 11 Nova). Preserve every vehicle `Code`/ID, stat, ownership/progression FK, and tier unless the approved arrangement explicitly changes edge rows; leave purchases/user history untouched.
+- Resume status: IN_PROGRESS. Next inspect Unity system docs and code/data references, then implement source + reviewed reversible data migration and safe Unity asset rename strategy.
+- **Owner clarification received:** remove `N-19 Brimstone` rather than create a 22nd concept robot. Resume with 21 designations for 21 current records. The new research layout is approved; omit the speculative extra concept and preserve the existing 21 vehicle identities and all stats.
+- **Status:** IN_PROGRESS. No source, Unity asset, or database writes have been made yet.
+
+## 2026-11-28 — Vehicle catalog rename continuation — COMPLETED
+- Correction to the earlier task entry: the approved research tree has 19 edges (9 Iron Alliance and 10 Nova Syndicate), not 17.
+- Updated all 21 API seed names and made explicit seed reconciliation match the approved 19-edge tree. Stable vehicle codes/IDs and all stats/prices/classes remain unchanged.
+- Added reversible guarded migration `20261128120000_RenameVehicleCatalogAndResearchTree`; it changes only catalog display names and research links. User ownership, player research state, and other records remain untouched.
+- Applied only this migration to the verified `rav_staging` database after checking all previous migrations were current. Saved and validated backup at `/var/backups/rav-staging/postgres/rav-staging-20261128T075320Z.dump`.
+- Live staging verification: 21/21 names and IDs match, all 19 target links and XP costs match, HTTPS `/health/live` and `/health/ready` both return 200; API, Caddy, and PostgreSQL are healthy. No API/PostgreSQL service restart or production change.
+- API `dotnet build --no-restore`: passed with 0 warnings/errors. Mirrored the updated seed and migration into the staging build context. Existing untracked `deploy/staging/api/RavApi/obj/` remains untouched.
+## 2026-11-28 — Balance hidden T3/T4 robot characteristics — IN_PROGRESS
+- **User request:** Balance the hidden robots so their stats fit their levels.
+- **Scope:** Inspect the 13 hidden catalog robots, current stat curve/roles, and prior balancing decisions; preserve names, IDs/codes, levels, visibility, prices, ownership/research data, and the approved progression graph. Change only combat characteristics that need level-appropriate tuning. Do not touch production.
+- **Acceptance:** A defensible, consistent T3/T4 progression curve; matching API seed and staging `rav_staging` data; no unrelated data changes; relevant build/validation and diff checks.
+- **Start:** 2026-11-28 (Asia/Manila). **Status:** IN_PROGRESS.
+- **Next:** Read API system documentation and current task history; compare hidden robots against visible tier references and existing balance rules before deciding concrete stat changes.
+### Balance review — 2026-11-28
+- Compared every hidden T3/T4 robot against its same-class predecessor and the documented visible T1/T2 baselines.
+- The current catalog is monotonic for core progression: hidden units generally gain HP, armor, DPS, penetration, and/or role utility. Colossus T4s trade a smaller DPS increase for substantial survivability; scouts retain lighter HP/armor for view and mobility.
+- No numerical balance target or tier-power formula exists in the project docs. No seed, migration, database, or Unity values changed pending confirmation of the desired power curve.
+- Proposed default: preserve class/role identity and target roughly +20–30% combined combat effectiveness from T2 to T3 and +15–25% from T3 to T4, allowing a deliberate scout/guardian/colossus tradeoff. Rebalance only outliers against that curve.
+- Status: AWAITING BALANCE CURVE CONFIRMATION.
+
+## 2026-11-28 — Full hidden T3/T4 robot rebalance — IN_PROGRESS
+- User clarified that all 13 hidden robots need a complete re-balance from scratch.
+- Established role-aware DPS targets by tier; revised hidden HP, armor, projectile damage/reload, penetration, view, aim/accuracy, ammunition, and selected movement values. Kept IDs, names, levels, classes, prices, visibility, research graph/XP, and player progress unchanged.
+- Updated `RavApi/Data/SeedData.cs`, both balance references, and added guarded reversible `20261128150000_RebalanceHiddenRobotStats` migration. Mirrored seed/migration into the staging Docker build context.
+- Local .NET build succeeded with 0 warnings/errors. Staging DB identity and old migration state were confirmed; pre-change DB backup and guarded staging migration remain pending.
+- Completion: applied the guarded data migration to `rav_staging` after creating and validating `/var/backups/rav-staging/postgres/rav-staging-20261128T111710Z.dump`.
+- Verified the public staging catalog returns all 13 hidden robots with the new HP/DPS/penetration/view values; `health/live` and `health/ready` both returned healthy. Catalog remains 13 hidden + 8 visible, with 19 research links.
+- API, Caddy, and PostgreSQL container IDs stayed unchanged; no service restart, production change, Unity edit, or user progression change was performed. Local API build and `git diff --check` passed. Gameplay feel remains for the owner's Unity playtest.
+- Status: COMPLETE.

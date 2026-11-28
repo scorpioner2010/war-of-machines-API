@@ -22,6 +22,8 @@ When `Database:SeedDevelopmentFixtures=true` and the database has no players, th
 - `Migrations/20261014120000_AddVehicleTraverseAcceleration.cs` - adds `TraverseAcceleration` and copies the current `Acceleration` into it for existing vehicles.
 - `Migrations/20261103120000_AddVehicleEnginePower.cs` - adds positive `EnginePower` and initializes the balanced values for seeded robot codes.
 - `Migrations/20261120120000_IncreaseNovaBipedEnginePower.cs` - increases `EnginePower` by `1000` for the 11 seeded Nova Syndicate biped robots without changing Iron Alliance tracked robots.
+- `Migrations/20261128120000_RenameVehicleCatalogAndResearchTree.cs` - updates the 21 staging catalog display names and the 19 reviewed research edges. It preserves vehicle IDs/codes, ownership, research records, and all combat/economy fields, and has a guarded reverse migration.
+- `Migrations/20261128150000_RebalanceHiddenRobotStats.cs` - recalibrates the 13 hidden T3/T4 robots using a role-aware tier curve. It changes hidden catalog combat stats only; it preserves names, codes, level/class/visibility, prices, research links/XP, player ownership, and progress. Up/down refuse if catalog identity or expected prior stat values have drifted.
 - `Migrations/20261119085129_SecurityHardeningFoundation.cs` - adds Dedicated Server registry, sessions, tickets, match ownership/version, finalized participant state, indexes, and constraints.
 - `Migrations/20261018120000_AddMatchParticipantRewardAmounts.cs` - adds persisted per-match `BoltsEarned` and `FreeXpEarned` values. Existing historical participant rows receive `0`; the match API marks those rows as not reward-calculated so clients do not present the default values as a valid reward.
 - `Migrations/AppDbContextModelSnapshot.cs` - current EF Core model snapshot.
@@ -47,7 +49,7 @@ When `Database:SeedDevelopmentFixtures=true` and the database has no players, th
 - No automated database or migration tests were found.
 
 ## Notes For Future Changes
-- Any entity, relationship, index, migration, or seed data change must update this doc and the affected domain doc. The Nova biped engine-power balance is defined consistently in `SeedData.cs` and the additive `20261120120000_IncreaseNovaBipedEnginePower` migration.
+- Any entity, relationship, index, migration, or seed data change must update this doc and the affected domain doc. The Nova biped engine-power balance is defined consistently in `SeedData.cs` and the additive `20261120120000_IncreaseNovaBipedEnginePower` migration. The machine-name and progression-tree update is defined in `SeedData.cs` and the reversible `20261128120000_RenameVehicleCatalogAndResearchTree` migration. Hidden robot combat stats are defined consistently in `SeedData.cs`, `robot-characteristics.md`, and the guarded/reversible `20261128150000_RebalanceHiddenRobotStats` data migration.
 - Startup auto-migration can affect production deploys; update `deployment-hosting.md` if this behavior changes.
 - Keep `AppDbContextFactory` connection behavior aligned with runtime startup.
 

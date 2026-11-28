@@ -3,9 +3,30 @@
 ## Current Behavior
 The vehicle catalog is public and stores vehicles by unique code with faction, branch, class, level, purchase cost, combat stats, armor strings, and visibility. `EnginePower` is a positive conditional engine-output stat exposed to clients; it is balanced independently from `Speed` and `Acceleration`. `TraverseAcceleration` controls how quickly the robot body reaches `TraverseSpeed` when it starts turning. Research links model predecessor-to-successor unlocks with XP cost on the predecessor. The catalog currently contains 21 seeded robots: 4 visible robots per faction plus 6 hidden Iron Alliance robots and 7 hidden Nova Syndicate robots at levels 3 and 4. Hidden robots remain in the public catalog and graph for the development tree, but cannot be researched, bought, or debug-added.
 
-Seeded vehicle combat stats are owned by `Data/SeedData.cs` and are written idempotently on startup. Current seeded `Accuracy` values are balanced from `0.8` to `2.0`, where lower values are more accurate. Current seeded `Penetration` values are balanced from `90` to `135`. `ShellSpeed` is linearly balanced from `90` to `150` while preserving the robots' original order. `Speed` is balanced from `1.26` to `5.616`: the global 50% reduction remains in effect, while `IA Strider` has a 30% increase from its reduced value. All seeded `Acceleration` values are reduced by half again and now range from `0.275` to `1.0`; `EnginePower` ranges from `700` to `1700`, with `+1000` applied to all 11 Nova Syndicate biped robots while Iron Alliance tracked robots retain their existing values. All `TraverseAcceleration` values are 100 times their corresponding `Acceleration` and range from `27.5` to `100`. Iron Alliance `TurretTraverseSpeed` values are the average of their original and reduced values, ranging from `11.25` to `24`; Nova Syndicate turret-turn values are reduced by 15% to `51.85`–`68`. `IA Strider` damage is reduced by 30% to `25.2`–`37.8`.
+Seeded vehicle combat stats are owned by `Data/SeedData.cs` and are written idempotently on startup. Current seeded `Accuracy` values are balanced from `0.74` to `2.0`, where lower values are more accurate. `ShellSpeed` is balanced from `90` to `150` for the seeded catalog. `Speed` ranges from `1.25` to `5.95`: the global 50% reduction remains in effect, while `TZ-23 101F` has a 30% increase from its reduced value. All seeded `Acceleration` values are reduced by half again and range from `0.27` to `1.0`; `EnginePower` ranges from `700` to `1700`, with `+1000` applied to all 11 Nova Syndicate biped robots while Iron Alliance tracked robots retain their existing values. All `TraverseAcceleration` values are 100 times their corresponding `Acceleration` and range from `26` to `100`. Iron Alliance `TurretTraverseSpeed` values range from `10.5` to `25`; Nova Syndicate turret-turn values range from `44` to `78`. `TZ-23 101F` damage remains reduced by 30% to `25.2`–`37.8`.
 
 `robot-characteristics.md` is the Ukrainian player-facing reference for all currently seeded robots. It groups the same catalog values by role, survivability, weapon, and movement, and must be updated when seeded vehicle stats or research costs change.
+
+The 13 hidden T3/T4 concepts use a role-aware tier curve rather than a flat multiplier. Sustained DPS targets are 39.5–45 for T3 scouts, 45 for T3 guardians, and 45–48 for T3 colossi; T4 targets are 54 for scouts, 56.25 for guardians, and 54 for colossi. HP, armor, penetration, and sight range scale with tier inside each role. Scouts retain weaker armor and stronger mobility/vision; colossi retain the strongest durability and shot damage with slower handling. The reversible `20261128150000_RebalanceHiddenRobotStats` migration updates only these hidden catalog stats and refuses to run if the expected 13 codes, levels, classes, visibility, or prior stat values have drifted.
+
+## Current Development Tree
+
+The catalog has 21 robots and 19 research links. Required XP values are unchanged and remain attached to each destination robot's research link.
+
+### Iron Alliance
+
+- TZ-18 (T1) → TZ-23 101F (T2) → TZ-42 (T2) → YUG Titan (T2)
+- TZ-18 (T1) → BR-160 (T3) → BR-174 Deadlock (T3) → R30-Halberd (T3)
+- BR-160 (T3) → R42-Glaive 7B (T3) → V-88/R Northstar (T4) → Blackline-09 Mk. II (T4)
+
+### Nova Syndicate
+
+- N-16 Whitecap (T1) → N-17 (T2) → ARGUS-7B (T2) → Cormorant 8C (T2) → ZR-22 Knifepoint (T3)
+- N-16 Whitecap (T1) → P-8 Null Compass (T3) → VX-44/2 (T3) → M-03 Sundown (T4)
+- VX-44/2 (T3) → 77-V Seeker (T4)
+- N-16 Whitecap (T1) → A-93 Graveward (T3) → S-404 Firebreak (T3)
+
+Vehicle names are the current machine designations. Stable vehicle `Code` values remain unchanged and continue to identify ownership, research progress, and Unity prefab mappings. The API remains the source of truth for each vehicle's name, level, class, price, and combat characteristics; Unity resolves playable prefabs by `Code` and reads displayed catalog data from the API.
 
 ## Owner Files
 - `Controllers/VehiclesController.cs` - public vehicle catalog, details, tech tree link management, and graph endpoints.
